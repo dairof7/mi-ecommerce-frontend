@@ -21,8 +21,8 @@ function App() {
       </main>
       {/* <Footer /> */}
       <ToastContainer
-        position="top-right"
-        autoClose={3000}
+        position="top-left"
+        autoClose={1000}
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick
@@ -30,7 +30,7 @@ function App() {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="light"
+        theme="dark"
       />
     </div>
   );

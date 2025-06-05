@@ -14,3 +14,14 @@ body {
     @apply px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-color-secondary focus:border-color-secondary sm:text-sm;
   }
 }
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Ocultar flechas en Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}

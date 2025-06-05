@@ -9,9 +9,9 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProductListPage from './pages/ProductListPage';
 import ProductDetailPage from './pages/ProductDetailPage';
-// import ProfilePage from './pages/ProfilePage';
-// import CartPage from './pages/CartPage';
-// import QuoteHistoryPage from './pages/QuoteHistoryPage';
+import ProfilePage from './pages/ProfilePage';
+import CartPage from './pages/CartPage';
+import QuoteHistoryPage from './pages/QuoteHistoryPage';
 // import NotFoundPage from './pages/NotFoundPage';
 
 // Componente para Rutas Protegidas
@@ -66,9 +66,9 @@ function RouterConfig() {
 
       Rutas Protegidas
       <Route element={<ProtectedRoute />}>
-        {/* <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/cart" element={<CartPage />} />
-        <Route path="/quotes" element={<QuoteHistoryPage />} /> */}
+        <Route path="/quotes" element={<QuoteHistoryPage />} />
         {/* Añade más rutas protegidas aquí */}
       </Route>
       

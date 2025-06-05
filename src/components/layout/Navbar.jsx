@@ -4,12 +4,13 @@ import { useAuthState, useAuthDispatch } from '../../contexts/AuthContext';
 import authService from '../../services/authService';
 import { toast } from 'react-toastify';
 import { FaShoppingCart, FaUserCircle, FaSignOutAlt, FaSignInAlt, FaUserPlus } from 'react-icons/fa'; // Iconos
+import { useCartState } from '../../contexts/CartContext';
 
 function Navbar() {
   const { isAuthenticated, user, refreshToken } = useAuthState();
   const dispatch = useAuthDispatch();
   const navigate = useNavigate();
-
+  const { itemCount } = useCartState();
   const handleLogout = async () => {
     // dispatch({ type: 'LOGOUT_REQUEST' }); // Opcional, para mostrar un loader que indique que se está cerrando sesión
     // Si tienes un loading spinner o algo similar, puedes activarlo aquí
@@ -43,10 +44,16 @@ function Navbar() {
             <>
               <Link to="/cart" className="relative hover:text-color-neutral-light transition-colors">
                 <FaShoppingCart size={24} />
-                {/* Aquí podrías añadir un contador de items del carrito */}
+                
+                {itemCount > 0 && (
+                  <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                    {itemCount}
+                  </span>
+                )}
+
               </Link>
               <Link to="/profile" className="hover:text-color-neutral-light transition-colors flex items-center">
-                <FaUserCircle size={24} className="mr-1" /> Perfil ({user?.email || user?.username})
+                <FaUserCircle size={24} className="mr-1" /> ({user?.user || user?.username})
               </Link>
               <button onClick={handleLogout} className="bg-color-accent2 hover:bg-opacity-80 text-white font-semibold py-2 px-3 rounded-md text-sm flex items-center transition-colors">
                 <FaSignOutAlt size={18} className="mr-1" /> Logout

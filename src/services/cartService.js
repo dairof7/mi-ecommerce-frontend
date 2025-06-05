@@ -8,8 +8,8 @@ const getCart = async () => {
     // si está autenticado (basado en tu CartViewSet.get_queryset)
     const response = await apiClient.get('/carts/carts/'); 
     // Si la respuesta es una lista y tu ViewSet devuelve el carrito del usuario como el primer (y único) elemento:
-    if (Array.isArray(response.data) && response.data.length > 0) {
-        return response.data[0]; // Asume que es el primer elemento si get_queryset devuelve un filter()
+    if (Array.isArray(response.data.items) && response.data.items.length > 0) {
+        return response.data; // Asume que es el primer elemento si get_queryset devuelve un filter()
     }
     // Si tu endpoint de listado para CartViewSet ya devuelve directamente el objeto del carrito del usuario:
     // return response.data; // O si es response.data.results[0] si está paginado pero solo hay uno.
@@ -80,10 +80,62 @@ const createQuoteFromCart = async () => {
   }
 };
 
+const addOneProductToCart = async (productId) => {
+  try {
+    const payload = { product_id: productId };
+    // Asumiendo que el endpoint 'add_one_to_cart' está en /api/carts/carts/add-one/
+    const response = await apiClient.post('/carts/carts/add-one/', payload);
+    return response.data; // Devuelve el carrito actualizado
+  } catch (error) {
+    console.error("Error adding one item to cart:", error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al añadir un item al carrito");
+  }
+};
+
+const getQuotes = async (params = {}) => { // params para paginación o filtros futuros
+  try {
+    // Endpoint: GET /api/carts/quotes/
+    const response = await apiClient.get('/carts/quotes/', { params });
+    return response.data; // Debería ser { count, next, previous, results: [...] }
+  } catch (error) {
+    console.error("Error fetching quotes:", error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al obtener las cotizaciones");
+  }
+};
+
+const getQuoteById = async (quoteId) => {
+  try {
+    // Endpoint: GET /api/carts/quotes/{id}/
+    const response = await apiClient.get(`/carts/quotes/${quoteId}/`);
+    return response.data; // Objeto Quote con sus items anidados
+  } catch (error) {
+    console.error(`Error fetching quote ${quoteId}:`, error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al obtener el detalle de la cotización");
+  }
+};
+
+const cancelQuote = async (quoteId) => {
+  try {
+    // Endpoint: POST /api/carts/quotes/{id}/cancel_quote/
+    // No espera cuerpo de solicitud según tu schema.json
+    const response = await apiClient.post(`/carts/quotes/${quoteId}/cancel_quote/`);
+    return response.data; // Debería devolver la cotización actualizada con status 'cancelled'
+  } catch (error) {
+    console.error(`Error cancelling quote ${quoteId}:`, error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al cancelar la cotización");
+  }
+};
+
+
+
 export default {
   getCart,
   addItemToCart,
   updateItemQuantity,
   removeItemFromCart,
   createQuoteFromCart,
+  addOneProductToCart,
+  getQuotes,
+  getQuoteById,
+  cancelQuote,
 };

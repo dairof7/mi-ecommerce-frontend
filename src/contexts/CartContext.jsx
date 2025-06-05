@@ -7,12 +7,12 @@ import { toast } from 'react-toastify';
 const CartStateContext = createContext(undefined);
 const CartDispatchContext = createContext(undefined);
 
-const initialCartState = {
-  items: [],          // Array de objetos CartItem del backend
-  itemCount: 0,       // Número total de items individuales (suma de cantidades)
-  totalAmount: 0,     // Suma total de los subtotales de los items
-  cartId: null,       // ID del carrito del backend
-  isLoading: false,   // Para operaciones del carrito
+const initialCartStateDefinition = { // Renombrado para claridad
+  items: [],
+  itemCount: 0,
+  totalAmount: 0,
+  cartId: null,
+  isLoading: false,
   error: null,
 };
 
@@ -34,16 +34,25 @@ function cartReducer(state, action) {
     case 'REQUEST_FAILURE':
       return { ...state, isLoading: false, error: action.payload.error };
     case 'LOAD_CART_SUCCESS':
-      const totals = calculateCartTotals(action.payload.cart.items);
-      return {
-        ...state,
-        items: action.payload.cart.items || [],
-        itemCount: totals.itemCount,
-        totalAmount: totals.totalAmount,
-        cartId: action.payload.cart.id,
-        isLoading: false,
-        error: null,
-      };
+      const cartData = action.payload.cart;
+      if (cartData && cartData.items) { // Si tenemos un carrito con items
+        const totals = calculateCartTotals(cartData.items);
+        return {
+          ...state,
+          items: cartData.items,
+          itemCount: totals.itemCount,
+          totalAmount: totals.totalAmount,
+          cartId: cartData.id,
+          isLoading: false,
+          error: null,
+        };
+      } else { // Carrito vacío o nulo del backend
+        return { 
+          ...initialCartStateDefinition, // Resetea a la definición inicial
+          isLoading: false, // Asegura que la carga termine
+          // cartId: cartData?.id || null // Podrías querer mantener el cartId si existe
+        };
+      }
     case 'ADD_ITEM_SUCCESS': // Podría simplemente recargar el carrito o actualizar localmente
     case 'UPDATE_ITEM_SUCCESS': // Podría simplemente recargar el carrito o actualizar localmente
     case 'REMOVE_ITEM_SUCCESS': // Podría simplemente recargar el carrito o actualizar localmente
@@ -61,11 +70,13 @@ function cartReducer(state, action) {
       // Por ahora, solo indicamos que la carga terminó, y el useEffect recargará
       return { ...state, isLoading: false, error: null };
     
-    case 'CLEAR_CART_SUCCESS': // Después de crear una cotización
+    case 'CLEAR_CART_SUCCESS': // Usado después de crear una cotización
       return { 
-        ...initialCartState, 
+        ...initialCartStateDefinition, 
         isLoading: false,
-        cartId: state.cartId // Mantener el ID del carrito si el backend no lo elimina
+        // cartId podría mantenerse o limpiarse dependiendo de si el backend elimina el Cart
+        // Si el backend no elimina el Cart, es mejor mantener el cartId
+        cartId: state.cartId 
       };
     case 'SET_CART_LOADING':
         return { ...state, isLoading: action.payload };
@@ -75,36 +86,30 @@ function cartReducer(state, action) {
 }
 
 export function CartProvider({ children }) {
-  const [state, dispatch] = useReducer(cartReducer, initialCartState);
-  const { isAuthenticated, user } = useAuthState(); // Para saber si cargar el carrito
+  const [state, dispatch] = useReducer(cartReducer, initialCartStateDefinition); // Usar la definición
+  const { isAuthenticated, user } = useAuthState();
 
   const loadCart = useCallback(async () => {
-    if (!isAuthenticated || !user) { // No cargar si no está autenticado o no hay usuario
-      dispatch({ type: 'CLEAR_CART_SUCCESS' }); // Limpiar carrito local si se desloguea
+    if (!isAuthenticated || !user) {
+      dispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: null } }); // Limpiar al desloguear
       return;
     }
     dispatch({ type: 'REQUEST_START' });
     try {
-      const cartData = await cartService.getCart();
-      if (cartData) {
-        dispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: cartData } });
-      } else {
-        // No hay carrito en el backend (ej. nuevo usuario), inicializar uno vacío
-        dispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: { items: [], id: null } }});
-      }
+      const cartApiResponse = await cartService.getCart();
+      // cartApiResponse puede ser el objeto carrito o null
+      dispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: cartApiResponse } });
     } catch (error) {
+      console.error("CartContext: Error loading cart", error);
       dispatch({ type: 'REQUEST_FAILURE', payload: { error: "Error al cargar el carrito" } });
-      // No mostramos toast aquí, la página que lo usa puede hacerlo
     }
-  }, [isAuthenticated, user]); // Dependencias: recargar si cambia el estado de autenticación o el usuario
+  }, [isAuthenticated, user]);
 
-  // Cargar el carrito cuando el usuario se autentica o al montar el provider si ya está autenticado
   useEffect(() => {
     if (isAuthenticated && user) {
       loadCart();
     } else {
-      // Si el usuario se desloguea, limpiar el carrito del estado
-      dispatch({ type: 'CLEAR_CART_SUCCESS' });
+      dispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: null } }); // Limpiar si se desloguea
     }
   }, [isAuthenticated, user, loadCart]);
 

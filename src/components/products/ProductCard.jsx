@@ -1,83 +1,168 @@
-// src/components/products/ProductCard.jsx
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { FaCartPlus } from 'react-icons/fa'; // Icono para añadir al carrito
+import React, { useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { FaCartPlus } from 'react-icons/fa';
+import { toast } from 'react-toastify';
+import { useAuthState } from '../../contexts/AuthContext';
+import { useCartDispatch } from '../../contexts/CartContext'; // Solo necesitamos el dispatch aquí
+import cartService from '../../services/cartService';
 
-// Helper para formatear moneda (puedes crear un util para esto)
+// Helper para formatear moneda
 const formatCurrency = (value) => {
   if (value === null || value === undefined) return '';
   return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits:0, maximumFractionDigits:0 }).format(value);
 };
 
 function ProductCard({ product }) {
+  const { isAuthenticated } = useAuthState();
+  const cartDispatch = useCartDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [isAdding, setIsAdding] = useState(false);
+
   if (!product) return null;
 
-  // Asume que el serializador envía la URL completa de la imagen principal
-  // Si 'images' es un array, toma la primera o una por defecto.
   const imageUrl = product.images && product.images.length > 0 
-                   ? product.images[0].image // product.images[0].image_url si así se llama en el serializador
-                   : 'https://via.placeholder.com/300x300.png?text=Sin+Imagen'; // Placeholder
+                   ? product.images[0].image 
+                   : 'https://via.placeholder.com/300x300.png?text=Sin+Imagen';
+
+  const handleAddToCart = async (e) => {
+    // Prevenir que el clic en el botón también active el Link de la tarjeta si estuvieran anidados de otra forma
+    if (e) { // e puede ser undefined si se llama programáticamente
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+
+    if (product.stock === 0) {
+        toast.warn("Este producto está agotado.");
+        return;
+    }
+
+    if (!isAuthenticated) {
+      toast.info("Por favor, inicia sesión para añadir productos al carrito.");
+      // Guardamos la ruta actual (lista de productos) O la del detalle si el usuario hace clic desde ahí
+      // Si este ProductCard está en ProductListPage, location.pathname será /products (o /category/X)
+      // Si el usuario quiere ir al detalle primero, el Link to={`/products/${product.id}`} se encarga
+      // Aquí, si no está logueado y hace clic en "Añadir", lo mandamos a login y luego podría volver
+      // a la lista o al producto si guardamos product.id también.
+      // Por simplicidad, lo mandamos a login y luego a la página de donde vino (la lista).
+      navigate('/login', { state: { from: location.pathname + location.search } });
+      return;
+    }
+
+    setIsAdding(true);
+    cartDispatch({ type: 'REQUEST_START' });
+
+    try {
+      // Llamamos al nuevo endpoint que siempre añade/incrementa en 1
+      const updatedCartData = await cartService.addOneProductToCart(product.id); 
+      
+      if (updatedCartData) {
+        cartDispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: updatedCartData } });
+      } else {
+        // Fallback si la API no devuelve el carrito
+        const fallbackCart = await cartService.getCart();
+        cartDispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: fallbackCart || { items: [], id: null, itemCount: 0, totalAmount: 0 } }});
+      }
+      toast.success(`"${product.name}" añadido al carrito!`);
+    } catch (error) {
+      const errorMsg = error?.error || error?.detail || error?.message || "Error al añadir al carrito.";
+      cartDispatch({ type: 'REQUEST_FAILURE', payload: { error: errorMsg } });
+      toast.error(errorMsg);
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  const buttonText = () => {
+    if (product.stock === 0) return 'Agotado';
+    if (isAdding) return 'Añadiendo...';
+    if (!isAuthenticated) return 'Ver Producto'; // O 'Iniciar Sesión para Comprar'
+    return 'Añadir al Carrito';
+  };
+
+  const handleButtonClick = (e) => {
+    if (!isAuthenticated && product.stock > 0) {
+        // Si no está autenticado y hace clic en "Ver Producto", lo llevamos al detalle
+        e.preventDefault(); // Prevenir que el Link padre se active si este botón estuviera dentro
+        e.stopPropagation();
+        navigate(`/products/${product.id}`);
+    } else if (product.stock > 0) {
+        handleAddToCart(e); // Solo llama a handleAddToCart si hay stock y está autenticado (o se manejará dentro)
+    }
+    // Si está agotado, el botón está deshabilitado y no hace nada
+  };
+
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden transform hover:scale-105 transition-transform duration-300 ease-in-out flex flex-col">
-      <Link to={`/products/${product.id}`} className="block">
+    <div className="bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden transform hover:shadow-xl hover:scale-[1.02] transition-all duration-300 ease-in-out flex flex-col group">
+      <Link to={`/products/${product.id}`} className="block relative aspect-[4/3] overflow-hidden"> {/* Ratio para imagen */}
         <img 
           src={imageUrl} 
           alt={product.name} 
-          className="w-full h-56 object-cover" // Ajusta h- según necesites
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
         />
       </Link>
-      <div className="p-5 flex flex-col flex-grow">
-        <h5 className="text-xl font-semibold tracking-tight text-color-primary mb-1 truncate" title={product.name}>
+      <div className="p-4 flex flex-col flex-grow">
+        <h5 className="text-md lg:text-lg font-semibold tracking-tight text-color-primary mb-1 min-h-[2.5em] line-clamp-2" title={product.name}>
+          {/* line-clamp-2 para limitar a 2 líneas y min-h para evitar saltos de layout */}
           <Link to={`/products/${product.id}`} className="hover:text-color-accent1">
             {product.name}
           </Link>
         </h5>
         
-        {/* Mostrar tags (opcional, primeras 2-3) */}
         {product.tags && product.tags.length > 0 && (
-          <div className="mb-2 flex flex-wrap gap-1">
+          <div className="mb-2 flex flex-wrap gap-1 h-6 overflow-hidden"> {/* Altura fija y overflow para tags */}
             {product.tags.slice(0, 3).map(tag => (
-              <span key={tag.id} className="text-xs bg-color-neutral-light text-color-primary px-2 py-0.5 rounded-full">
+              <span key={tag.id} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
                 {tag.name}
               </span>
             ))}
           </div>
         )}
 
-        <div className="mt-auto"> {/* Empuja precios y botón hacia abajo */}
-          <div className="flex items-center justify-between mb-3">
+        <div className="mt-auto pt-2">
+          <div className="flex items-baseline justify-between mb-2">
             {product.has_discount ? (
-              <div>
-                <span className="text-2xl font-bold text-color-accent2">
+              <div className="flex flex-col items-start">
+                <span className="text-lg lg:text-xl font-bold text-color-accent2">
                   {formatCurrency(product.final_sale_price)}
                 </span>
-                <span className="text-sm text-gray-500 line-through ml-2">
+                <span className="text-xs text-gray-500 line-through">
                   {formatCurrency(product.original_sale_price)}
                 </span>
               </div>
             ) : (
-              <span className="text-2xl font-bold text-color-primary">
+              <span className="text-lg lg:text-xl font-bold text-color-primary">
                 {formatCurrency(product.original_sale_price)}
               </span>
             )}
           </div>
 
           {product.has_discount && product.applied_discount_percentage > 0 && (
-             <p className="text-sm text-green-600 font-semibold mb-2">
-                Ahorras: {formatCurrency(product.discount_amount_saved)} ({parseFloat(product.applied_discount_percentage).toFixed(0)}%)
+             <p className="text-xs text-green-600 font-semibold mb-3">
+                Ahorro: {parseFloat(product.applied_discount_percentage).toFixed(0)}%
              </p>
           )}
 
-          {/* TODO: Implementar la lógica de añadir al carrito */}
           <button 
-            // onClick={() => addToCart(product.id, 1)} // Ejemplo
-            className="w-full flex items-center justify-center text-white bg-color-secondary hover:bg-color-accent1 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center disabled:opacity-50"
-            // disabled={product.stock === 0} // Deshabilitar si no hay stock
+            onClick={handleButtonClick} // Cambiado a handleButtonClick
+            disabled={product.stock === 0 || isAdding} // Deshabilitar si está agotado o añadiendo
+            className={`w-full flex items-center justify-center text-white font-medium rounded-lg text-sm px-4 py-2 md:py-2.5 text-center transition-colors duration-150 ease-in-out
+                        ${product.stock === 0 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                              : (isAdding ? 'bg-color-accent2 opacity-70 cursor-wait' 
+                                                          : 'bg-color-secondary hover:bg-color-accent1 focus:ring-4 focus:outline-none focus:ring-blue-300')}`}
+            title={buttonText()}
           >
             <FaCartPlus className="mr-2" />
-            {product.stock > 0 ? 'Añadir al Carrito' : 'Agotado'}
+            {buttonText()}
           </button>
+          {!isAuthenticated && product.stock > 0 && (
+            <p className="text-xs text-center mt-1 text-gray-500">
+              <Link to="/login" state={{ from: `/products/${product.id}` }} className="underline hover:text-color-secondary">Inicia sesión</Link> para comprar.
+            </p>
+          )}
         </div>
       </div>
     </div>
