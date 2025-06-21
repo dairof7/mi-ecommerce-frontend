@@ -36,7 +36,7 @@ const BannerCarousel = ({ banners }) => {
   if (!banners || banners.length === 0) return null;
 
   return (
-    <div className="relative w-full h-64 md:h-96 lg:h-[500px] overflow-hidden rounded-lg shadow-xl mb-12">
+    <div className="relative w-full h-64 md:h-96 lg:h-[360px] overflow-hidden rounded-lg shadow-xl mb-12">
       {banners.map((banner, index) => (
         <div
           key={banner.id || index}
@@ -84,6 +84,66 @@ const BannerCarousel = ({ banners }) => {
     </div>
   );
 };
+
+
+const CategoryCarousel = ({ categories }) => {
+  if (!categories || categories.length === 0) return null;
+
+  // Lógica para el scroll del carrusel (simplificada)
+  // Para un carrusel real, usarías refs y scrollLeft, o una librería.
+  // Esta es una representación para la idea.
+  const scrollContainerRef = React.useRef(null);
+
+  const scroll = (direction) => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 300; // Ajusta esto
+      scrollContainerRef.current.scrollBy({ 
+        left: direction === 'left' ? -scrollAmount : scrollAmount, 
+        behavior: 'smooth' 
+      });
+    }
+  };
+
+  return (
+    <div className="relative">
+      <div 
+        ref={scrollContainerRef}
+        className="flex space-x-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-color-secondary scrollbar-track-gray-100" // Clases para scroll horizontal
+      >
+        {categories.map(category => (
+          <Link
+            to={`/category/${category.id}`}
+            key={category.id}
+            className="group flex-shrink-0 w-32 h-40 sm:w-36 sm:h-44 md:w-40 md:h-48 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden flex flex-col items-center p-2"
+          >
+            <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg overflow-hidden mb-2 border-1 border-transparent group-hover:border-color-accent1 transition-all">
+              <img
+                src={category.image || 'https://via.placeholder.com/150'}
+                alt={category.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <h3 className="font-semibold text-color-secondary group-hover:text-color-accent1 text-xs sm:text-sm text-center truncate w-full" title={category.name}>
+              {category.name}
+            </h3>
+          </Link>
+        ))}
+      </div>
+      {/* Botones de scroll (opcional, el scroll táctil/rueda funciona) */}
+      {categories.length > 5 && ( // Mostrar botones solo si hay suficientes items para scrollear
+        <>
+        <button onClick={() => scroll('left')} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/70 hover:bg-white p-2 rounded-full shadow-md text-color-primary disabled:opacity-50" aria-label="Scroll Izquierda">
+            <FaChevronLeft />
+        </button>
+        <button onClick={() => scroll('right')} className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/70 hover:bg-white p-2 rounded-full shadow-md text-color-primary disabled:opacity-50" aria-label="Scroll Derecha">
+            <FaChevronRight />
+        </button>
+        </>
+      )}
+    </div>
+  );
+};
+
 
 const ProductSection = ({ title, products, icon, isLoading, error, sectionId }) => {
   // Mostrar loader solo si esta sección específica está cargando y no hay productos aún
@@ -202,35 +262,16 @@ function HomePage() {
         <div className="text-center py-6 text-gray-500">No hay banners para mostrar.</div>
       )}
 
-      {/* Sección de Categorías Destacadas */}
-      {isLoadingCategories && categories.length === 0 && <Loader message="Cargando categorías..." />}
-      {!isLoadingCategories && categories.length > 0 && (
-        <section className="mb-12">
-          <h2 className="text-3xl font-bold text-color-primary mb-6 flex items-center">
-            <FaTags className="mr-3 text-color-accent1" /> Nuestras Categorías
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
-            {categories.map(category => (
-              <Link 
-                to={`/category/${category.id}`} 
-                key={category.id} 
-                className="group block bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden text-center p-1"
-              >
-                <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden xl:aspect-w-1 xl:aspect-h-1"> {/* Mantener ratio */}
-                  <img 
-                    src={category.image || 'https://images.wikidexcdn.net/mwuploads/esssbwiki/d/dc/latest/20180618214025/Solid_Snake_MGSTLC.jpg'} 
-                    alt={category.name} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <h3 className="mt-2 mb-1 py-2 font-semibold text-color-secondary group-hover:text-color-accent1 transition-colors text-sm md:text-base truncate" title={category.name}>
-                  {category.name}
-                </h3>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Sección de Categorías Destacadas */}  
+ {isLoadingCategories && categories.length === 0 && <Loader message="Cargando categorías..." />}
+ {!isLoadingCategories && categories.length > 0 && (
+   <section className="mb-12">
+     <h2 className="text-3xl font-bold text-color-primary mb-6 flex items-center">
+       <FaTags className="mr-3 text-color-accent1" /> Nuestras Categorías
+     </h2>
+     <CategoryCarousel categories={categories} />
+   </section>
+ )}
 
       {/* Sección de Productos Destacados */}
       <ProductSection 

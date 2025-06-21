@@ -19,8 +19,8 @@ function authReducer(state, action) {
   switch (action.type) {
     case 'REQUEST_START': // Acción genérica para iniciar carga
       return { ...state, isLoading: true, error: null };
-    // case 'LOGOUT_REQUEST': // <--- AÑADE ESTE CASE AQUÍ
-    //   return { ...state, isLoading: true, error: null };
+    case 'LOGOUT_REQUEST': // <--- AÑADE ESTE CASE AQUÍ
+      return { ...state, isLoading: true, error: null };
     case 'LOGIN_SUCCESS': // Usado después de un login exitoso Y obtención de perfil
       localStorage.setItem('accessToken', action.payload.accessToken);
       localStorage.setItem('refreshToken', action.payload.refreshToken);

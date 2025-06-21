@@ -152,25 +152,25 @@ function ProductDetailPage() {
   const thumbnailImages = product.images || [];
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="mb-6">
+    <div className="container mx-auto py-4 sm:py-8 px-2 sm:px-4">
+      <div className="mb-1">
         <Link to="/products" className="text-color-secondary hover:text-color-accent1 inline-flex items-center">
             <FaChevronLeft className="mr-2" /> Volver al listado de productos
         </Link>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 bg-white p-6 md:p-8 rounded-lg shadow-xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10 bg-white p-3 sm:p-6 md:p-8 rounded-lg shadow-xl">
         {/* Columna de Imágenes */}
         <div className="product-images">
-          <div className="relative mb-4 border rounded-lg shadow-md overflow-hidden">
+        <div className="relative mb-2 border rounded-lg shadow-sm overflow-hidden aspect-square md:aspect-auto md:h-auto max-h-[70vh] md:max-h-[500px] lg:max-h-[600px]">
             <img 
               src={mainImageUrl} 
               alt={product.images && product.images.length > 0 ? product.images[currentImageIndex]?.alt_text || product.name : product.name} 
-              className="w-full h-auto md:h-[450px] lg:h-[500px] object-contain"
+              className="w-full h-full object-contain"
             />
             {thumbnailImages.length > 1 && (
               <>
                 <button onClick={prevImage} className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-black bg-opacity-40 text-white p-2 rounded-full hover:bg-opacity-60 focus:outline-none transition-opacity" aria-label="Imagen anterior">
-                  <FaChevronLeft size={24} />
+                  <FaChevronLeft size={20} />
                 </button>
                 <button onClick={nextImage} className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-black bg-opacity-40 text-white p-2 rounded-full hover:bg-opacity-60 focus:outline-none transition-opacity" aria-label="Siguiente imagen">
                   <FaChevronRight size={24} />
@@ -184,7 +184,7 @@ function ProductDetailPage() {
                 <button 
                   key={img.id || index}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`w-16 h-16 md:w-20 md:h-20 border-2 rounded-md overflow-hidden focus:outline-none transition-all ${index === currentImageIndex ? 'border-color-secondary ring-2 ring-color-secondary' : 'border-transparent hover:border-gray-400'}`}
+                  className={`w-2 h-2 md:w-20 md:h-20 border-2 rounded-md overflow-hidden focus:outline-none transition-all ${index === currentImageIndex ? 'border-color-secondary ring-2 ring-color-secondary' : 'border-transparent hover:border-gray-400'}`}
                   aria-label={`Ver imagen ${index + 1}`}
                 >
                   <img src={img.image} alt={img.alt_text || `Miniatura ${index + 1}`} className="w-full h-full object-cover" />
@@ -195,11 +195,11 @@ function ProductDetailPage() {
         </div>
 
         {/* Columna de Información y Acciones */}
-        <div className="product-info flex flex-col">
-          <div> {/* Contenedor para la info superior */}
-            <h1 className="text-3xl lg:text-4xl font-bold text-color-primary mb-2">{product.name}</h1>
+<div className="product-info flex flex-col justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-color-primary mb-2 leading-tight">{product.name}</h1>
             
-            <div className="mb-4 text-sm">
+            <div className="mb-2 text-xs sm:text-sm">
               {product.category && (
                 <Link to={`/category/${product.category.id}`} className="text-color-accent2 hover:underline mr-1">
                   {product.category.name}
@@ -213,10 +213,10 @@ function ProductDetailPage() {
               )}
             </div>
 
-            <div className="mb-5">
+            <div className="mb-2">
               {product.has_discount ? (
                 <div className="flex items-baseline space-x-2">
-                  <p className="text-3xl md:text-4xl font-bold text-color-accent1">{formatCurrency(product.final_sale_price)}</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-color-accent1">{formatCurrency(product.final_sale_price)}</p>
                   <p className="text-lg md:text-xl text-gray-400 line-through">{formatCurrency(product.original_sale_price)}</p>
                   {product.applied_discount_percentage > 0 && (
                       <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-semibold rounded">
@@ -234,7 +234,7 @@ function ProductDetailPage() {
               )}
             </div>
             
-            <div className="mb-5 flex items-center">
+            <div className="mb-2 flex items-center">
               <FaStore className="text-gray-600 mr-2" />
               {product.stock > 0 ? (
                 <span className="text-green-600 font-semibold">En Stock ({product.stock} disponibles)</span>
@@ -243,17 +243,9 @@ function ProductDetailPage() {
               )}
             </div>
 
-            {product.description && (
-              <div className="mb-6 prose prose-sm max-w-none"> {/* Usar clases 'prose' de Tailwind para formateo de texto */}
-                <h3 className="text-lg font-semibold text-color-secondary mb-2 flex items-center">
-                  <FaInfoCircle className="mr-2" /> Descripción
-                </h3>
-                <div className="text-gray-700 leading-relaxed">{product.description.split('\n').map((line, i) => <p key={i}>{line}</p>)}</div>
-              </div>
-            )}
 
             {product.tags && product.tags.length > 0 && (
-              <div className="mb-6">
+              <div className="mb-2">
                 <h3 className="text-lg font-semibold text-color-secondary mb-2 flex items-center">
                   <FaTags className="mr-2" /> Etiquetas
                 </h3>
@@ -269,7 +261,7 @@ function ProductDetailPage() {
           </div>
 
           {/* Selector de Cantidad y Botón Añadir al Carrito - Empujados hacia abajo si hay mucho contenido arriba */}
-          <div className="mt-auto pt-6 border-t"> 
+          <div className="mt-auto pt-4 sm:pt-6 border-t border-gray-200">
             {product.stock > 0 ? (
               <>
                 <div className="flex items-center space-x-3 mb-4">
@@ -293,7 +285,7 @@ function ProductDetailPage() {
                 <button
                     onClick={handleAddToCart}
                     disabled={isAddingToCart || !isAuthenticated} // Deshabilitar si no está autenticado también
-                    className={`w-full flex items-center justify-center text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors disabled:cursor-not-allowed
+                    className={`w-full flex items-center justify-center text-white font-bold py-2.5 px-4 sm:py-3 sm:px-6 rounded-lg text-base transition-colors disabled:cursor-not-allowed
                                 ${isAddingToCart ? 'bg-color-accent2 opacity-70' 
                                                 : (isAuthenticated ? 'bg-color-secondary hover:bg-color-accent1' 
                                                                   : 'bg-gray-400')}`}
@@ -311,6 +303,15 @@ function ProductDetailPage() {
               <p className="text-center text-xl font-semibold text-red-600 bg-red-100 p-3 rounded-md">Producto Agotado</p>
             )}
           </div>
+                      {/* Descripción del Producto */}
+            {product.description && (
+              <div className="mb-6 prose prose-sm max-w-none"> {/* Usar clases 'prose' de Tailwind para formateo de texto */}
+                <h3 className="text-lg font-semibold text-color-secondary mb-2 flex items-center">
+                  <FaInfoCircle className="mr-2" /> Descripción
+                </h3>
+                <div className="text-gray-700 leading-relaxed">{product.description.split('\n').map((line, i) => <p key={i}>{line}</p>)}</div>
+              </div>
+            )}
         </div>
       </div>
       {/* TODO: Banners para product_detail_related */}

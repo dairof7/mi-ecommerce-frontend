@@ -96,60 +96,57 @@ function ProductCard({ product }) {
 
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden transform hover:shadow-xl hover:scale-[1.02] transition-all duration-300 ease-in-out flex flex-col group">
-      <Link to={`/products/${product.id}`} className="block relative aspect-[4/3] overflow-hidden"> {/* Ratio para imagen */}
-        <img 
-          src={imageUrl} 
-          alt={product.name} 
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-        />
-      </Link>
-      <div className="p-4 flex flex-col flex-grow">
-        <h5 className="text-md lg:text-lg font-semibold tracking-tight text-color-primary mb-1 min-h-[2.5em] line-clamp-2" title={product.name}>
-          {/* line-clamp-2 para limitar a 2 líneas y min-h para evitar saltos de layout */}
-          <Link to={`/products/${product.id}`} className="hover:text-color-accent1">
-            {product.name}
-          </Link>
-        </h5>
+  <div className="bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden transform hover:shadow-xl hover:scale-[1.02] transition-all duration-300 ease-in-out flex flex-col group">
+    <Link to={`/products/${product.id}`} className="block relative aspect-[4/3] overflow-hidden">
+      <img 
+        src={imageUrl} 
+        alt={product.name} 
+        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+      />
+    </Link>
+    <div className="p-1 sm:p-4 flex flex-col flex-grow"> {/* Padding más pequeño en mobile */}
+<h5 className="text-sm sm:text-base font-semibold tracking-tight text-color-primary mb-0.5 min-h-[1.6em] sm:min-h-[2em] line-clamp-2" title={product.name}>
+  <Link to={`/products/${product.id}`} className="hover:text-color-accent1">
+    {product.name}
+  </Link>
+</h5>
         
-        {product.tags && product.tags.length > 0 && (
-          <div className="mb-2 flex flex-wrap gap-1 h-6 overflow-hidden"> {/* Altura fija y overflow para tags */}
-            {product.tags.slice(0, 3).map(tag => (
-              <span key={tag.id} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                {tag.name}
-              </span>
-            ))}
-          </div>
-        )}
+
 
         <div className="mt-auto pt-2">
-          <div className="flex items-baseline justify-between mb-2">
-            {product.has_discount ? (
-              <div className="flex flex-col items-start">
-                <span className="text-lg lg:text-xl font-bold text-color-accent2">
-                  {formatCurrency(product.final_sale_price)}
-                </span>
-                <span className="text-xs text-gray-500 line-through">
-                  {formatCurrency(product.original_sale_price)}
-                </span>
-              </div>
-            ) : (
-              <span className="text-lg lg:text-xl font-bold text-color-primary">
-                {formatCurrency(product.original_sale_price)}
-              </span>
-            )}
-          </div>
-
-          {product.has_discount && product.applied_discount_percentage > 0 && (
-             <p className="text-xs text-green-600 font-semibold mb-3">
-                Ahorro: {parseFloat(product.applied_discount_percentage).toFixed(0)}%
-             </p>
+        <div className="flex items-baseline justify-between mb-2">
+  <div className="flex flex-col items-start">
+    <div className="flex items-baseline gap-2">
+      {product.has_discount ? (
+        <>
+          <span className="text-lg sm:text-xl font-bold text-color-accent2">
+            {formatCurrency(product.final_sale_price)}
+          </span>
+          {product.applied_discount_percentage > 0 && (
+            <p className="text-xs text-green-600 font-semibold mb-0">
+              Ahorro: {parseFloat(product.applied_discount_percentage).toFixed(0)}%
+            </p>
           )}
+        </>
+      ) : (
+        <span className="text-lg sm:text-xl font-bold text-color-primary">
+          {formatCurrency(product.original_sale_price)}
+        </span>
+      )}
+    </div>
+    {product.has_discount && (
+      <span className="text-xs text-gray-500 line-through">
+        {formatCurrency(product.original_sale_price)}
+      </span>
+    )}
+  </div>
+</div>
+
 
           <button 
             onClick={handleButtonClick} // Cambiado a handleButtonClick
             disabled={product.stock === 0 || isAdding} // Deshabilitar si está agotado o añadiendo
-            className={`w-full flex items-center justify-center text-white font-medium rounded-lg text-sm px-4 py-2 md:py-2.5 text-center transition-colors duration-150 ease-in-out
+            className={`w-full flex items-center justify-center text-white font-medium rounded-lg text-xs sm:text-sm px-3 py-2 md:px-4 md:py-2.5 text-center transition-colors duration-150 ease-in-out
                         ${product.stock === 0 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
                                               : (isAdding ? 'bg-color-accent2 opacity-70 cursor-wait' 
                                                           : 'bg-color-secondary hover:bg-color-accent1 focus:ring-4 focus:outline-none focus:ring-blue-300')}`}
