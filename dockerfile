@@ -1,7 +1,7 @@
 # Dockerfile (para el frontend React - servido por Nginx)
 
 # --- Etapa de Build ---
-FROM node:18-alpine AS build-stage # Elige una versión de Node LTS
+FROM node:18-alpine AS build-stage
 
 WORKDIR /app
 
