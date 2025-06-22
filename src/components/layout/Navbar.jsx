@@ -6,6 +6,7 @@ import authService from '../../services/authService';
 import { toast } from 'react-toastify';
 import { FaShoppingCart, FaUserCircle, FaSignOutAlt, FaSignInAlt, FaUserPlus, FaBars, FaTimes } from 'react-icons/fa';
 import { useCartState } from '../../contexts/CartContext';
+import logoImage from '../../assets/logo_blanco.png';
 
 function Navbar() {
   const { isAuthenticated, user, refreshToken: currentRefreshToken } = useAuthState(); // Obtener refreshToken del estado
@@ -42,12 +43,17 @@ function Navbar() {
     <nav className="bg-color-primary text-text-light shadow-lg sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <div className="flex-shrink-0">
-            <Link to="/" className="text-2xl font-bold hover:text-color-neutral-light transition-colors">
-              Solid Store
-            </Link>
-          </div>
+          <Link to="/" className="flex items-center space-x-3 rtl:space-x-reverse">
+          <img 
+              src={logoImage} // Usa la variable importada
+              className="h-8 sm:h-9" // Ajusta el tamaño según tu logo
+              alt="S" 
+            />
+            <span className="self-center text-xl sm:text-2xl font-semibold whitespace-nowrap hover:text-color-neutral-light transition-colors">
+              Solid Store {/* Nombre de tu tienda */}
+            </span>
+          </Link>
+
 
           {/* Navegación Desktop (oculta en mobile) */}
           <div className="hidden md:flex md:items-center md:space-x-4">
