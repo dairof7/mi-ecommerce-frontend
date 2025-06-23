@@ -55,8 +55,8 @@ function RouterConfig() {
       <Route path="/" element={<HomePage />} />
       <Route path="/products" element={<ProductListPage />} />
       <Route path="/products/:productId" element={<ProductDetailPage />} />
-      <Route path="/category/:categoryId" element={<ProductListPage />} />
-      <Route path="/subcategory/:subcategoryId" element={<ProductListPage />} />
+      {/* <Route path="/category/:categoryId" element={<ProductListPage />} /> */}
+      {/* <Route path="/subcategory/:subcategoryId" element={<ProductListPage />} /> */}
 
       {/* Rutas que no deberían ser accesibles si ya estás logueado */}
       <Route element={<PublicRoute />}>

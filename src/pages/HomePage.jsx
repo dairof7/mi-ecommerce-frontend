@@ -112,7 +112,7 @@ const CategoryCarousel = ({ categories }) => {
       >
         {categories.map(category => (
           <Link
-            to={`/category/${category.id}`}
+            to={`/products?category=${category.id}`}
             key={category.id}
             className="group flex-shrink-0 w-32 h-40 sm:w-36 sm:h-44 md:w-40 md:h-48 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden flex flex-col items-center p-2"
           >
