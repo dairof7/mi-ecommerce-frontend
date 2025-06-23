@@ -370,8 +370,8 @@ function ProductListPage() {
               <option value="">Relevancia</option>
               <option value="name">Nombre (A-Z)</option>
               <option value="-name">Nombre (Z-A)</option>
-              <option value="final_sale_price">Precio (Menor a Mayor)</option>
-              <option value="-final_sale_price">Precio (Mayor a Menor)</option>
+              <option value="sale_price">Precio (Menor a Mayor)</option>
+              <option value="-sale_price">Precio (Mayor a Menor)</option>
               <option value="-created_at">Más Recientes</option>
           </select>
       </div>
