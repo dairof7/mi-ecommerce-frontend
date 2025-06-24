@@ -220,8 +220,10 @@ const handleCreateQuote = async () => {
               <dd className="text-base font-medium text-gray-900">{formatCurrency(totalAmount)}</dd>
             </div> */}
           </dl>
-
-          <div className="mt-6">
+<p className="mt-6 text-xs text-center text-gray-500">
+              Nota: Los precios no incluyen el costo de envío. Este se coordinará después de generar tu cotización.
+            </p>
+          <div className="mt-4">
             <button
               onClick={handleCreateQuote}
               disabled={isProcessingItem || itemCount === 0 || isCartLoading}

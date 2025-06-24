@@ -4,7 +4,9 @@ import { Link } from 'react-router-dom';
 import cartService from '../services/cartService'; // Asume que las funciones de quote están aquí
 import { toast } from 'react-toastify';
 import { FaFileInvoiceDollar, FaInfoCircle, FaTimesCircle, FaCheckCircle, FaRedo } from 'react-icons/fa';
-
+import { FaWhatsapp } from 'react-icons/fa';
+import { FaUniversity, FaMobileAlt, FaCreditCard } from 'react-icons/fa';
+const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER;
 // Helper para formatear moneda y fecha
 const formatCurrency = (value) => {
   if (value === null || value === undefined) return 'N/A';
@@ -55,6 +57,47 @@ function QuoteHistoryPage() {
   // const [totalPages, setTotalPages] = useState(0);
   // const [totalQuotes, setTotalQuotes] = useState(0);
 
+  const paymentMethods = [
+    {
+      name: "Bancolombia",
+      icon: FaUniversity,
+      qrImage: "/assets/images/qrs/qr-bancolombia.png", // Ruta desde la carpeta public
+      details: [
+        "Cuenta Ahorros: <strong>838-319676-95</strong>",
+        "A nombre de: <strong>Dairo Facundo</strong>",
+        // "NIT/CC: <strong>123.456.789-0</strong>"
+      ],
+      instructions: "Escanea el QR o usa los datos de la cuenta."
+    },
+    {
+      name: "Nequi",
+      icon: FaMobileAlt,
+      qrImage: "/assets/images/qrs/qr-nequi.png",
+      details: [
+        "Número Celular: <strong>3013367420</strong>"
+      ],
+      instructions: "Envía a este número Nequi."
+    },
+    // {
+    //   name: "Daviplata",
+    //   icon: FaMobileAlt,
+    //   qrImage: "/assets/images/qrs/qr-daviplata.png", // Ejemplo
+    //   details: [
+    //     "Número Celular: <strong>301-765-4321</strong>"
+    //   ],
+    //   instructions: "Usa este número Daviplata."
+    // },
+    // Puedes añadir más como "Pago Contra Entrega (Efectivo)" si aplica
+    // {
+    //   name: "Pago Contra Entrega",
+    //   icon: FaMoneyBillWave, // Necesitarías este icono
+    //   qrImage: null, // No aplica QR
+    //   details: ["Solo efectivo.", "Disponible en [Tu Ciudad/Región]."],
+    //   instructions: "Coordina por WhatsApp para esta opción."
+    // }
+  ];
+
+  const showPaymentMethods = quotes.length > 0 && quotes.some(q => q.status === 'pending' || q.status === 'paid');
   const fetchQuotes = useCallback(async (/* page = 1 */) => {
     setIsLoading(true);
     setError(null);
@@ -143,9 +186,32 @@ function QuoteHistoryPage() {
     );
   }
 
+  const latestQuote = quotes.length > 0 ? quotes[0] : null; // Asumiendo que están ordenadas por fecha desc
+  const showPostQuoteGuidance = latestQuote && latestQuote.status === 'pending'; 
+  const WHATSAPP_MESSAGE = "Hola, estoy interesado en finalizar mi cotización"; // Mensaje predeterminado
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold text-color-primary mb-8">Mis Cotizaciones</h1>
+
+      {/* --- GUÍA POST-COTIZACIÓN --- */}
+      {showPostQuoteGuidance && (
+        <div className="bg-blue-50 border-l-4 border-color-accent2 text-color-secondary p-6 rounded-md shadow-md mb-8">
+          <h2 className="text-xl font-semibold mb-3">¡Cotización #{latestQuote.id} Recibida!</h2>
+          <p className="mb-2">Gracias por solicitar tu cotización. Para continuar con tu compra y coordinar el pago, por favor contáctanos:</p>
+          <a
+            href={`https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, '')}?text=${encodeURIComponent(WHATSAPP_MESSAGE + ` (Ref: Cotización #${latestQuote.id})`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors my-2"
+          >
+            <FaWhatsapp className="mr-2" /> Contactar por WhatsApp
+          </a>
+          <p className="text-sm text-gray-700 mt-3">
+            <strong>Importante:</strong> Los precios indicados en la cotización no incluyen el costo de envío. Este valor se te informará y se acordará al confirmar tu pedido.
+          </p>
+        </div>
+      )}
+
       <div className="space-y-6">
         {quotes.map((quote) => (
           <div key={quote.id} className="bg-white shadow-lg rounded-lg overflow-hidden">
@@ -200,13 +266,51 @@ function QuoteHistoryPage() {
                 </div>
               </div>
             )}
+            
+
+
+
           </div>
         ))}
       </div>
       {/* TODO: Paginación si el endpoint de cotizaciones está paginado */}
       {/* {totalPages > 1 && (
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={fetchQuotes} />
-      )} */}
+        )} */}
+        {showPaymentMethods && ( // Mostrar si hay alguna cotización pendiente o pagada
+          <section className="mt-12 py-8 border-t border-gray-200">
+            <h2 className="text-2xl font-semibold text-color-primary mb-3 text-center">Nuestros Medios de Pago</h2>
+            <p className="text-gray-600 mb-8 text-center max-w-2xl mx-auto">
+              Una vez tu cotización sea confirmada y hayas acordado el envío por WhatsApp, puedes usar cualquiera de estos medios para realizar tu pago.
+              Recuerda enviar tu comprobante a nuestro WhatsApp.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              {paymentMethods.map((method) => (
+                <div key={method.name} className="bg-white p-6 rounded-lg shadow-lg border border-gray-200 flex flex-col items-center text-center">
+                  {method.icon && React.createElement(method.icon, { className: "text-4xl text-color-accent1 mb-3" })}
+                  <h3 className="text-xl font-semibold text-color-secondary mb-3">{method.name}</h3>
+                  {method.qrImage && (
+                    <img 
+                      src={method.qrImage} 
+                      alt={`QR ${method.name}`} 
+                      className="w-36 h-36 md:w-40 md:h-40 object-contain mb-3 border p-1 bg-white" 
+                    />
+                  )}
+                  {method.details && method.details.length > 0 && (
+                    <div className="text-sm text-gray-700 space-y-1 mb-2">
+                      {method.details.map((detail, index) => (
+                        // Usar dangerouslySetInnerHTML con precaución. Aquí es para el <strong>.
+                        // Si los detalles vienen de una API, sanitízalos.
+                        <p key={index} dangerouslySetInnerHTML={{ __html: detail }} />
+                      ))}
+                    </div>
+                  )}
+                  {method.instructions && <p className="text-xs text-gray-500">{method.instructions}</p>}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
     </div>
   );
 }

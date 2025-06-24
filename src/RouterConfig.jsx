@@ -13,7 +13,7 @@ import ProfilePage from './pages/ProfilePage';
 import CartPage from './pages/CartPage';
 import QuoteHistoryPage from './pages/QuoteHistoryPage';
 // import NotFoundPage from './pages/NotFoundPage';
-
+import HowToBuyPage from './pages/HowToBuyPage';
 // Componente para Rutas Protegidas
 const ProtectedRoute = () => {
   const { isAuthenticated, isLoading } = useAuthState();
@@ -55,6 +55,7 @@ function RouterConfig() {
       <Route path="/" element={<HomePage />} />
       <Route path="/products" element={<ProductListPage />} />
       <Route path="/products/:productId" element={<ProductDetailPage />} />
+      <Route path="/como-comprar" element={<HowToBuyPage />} />
       {/* <Route path="/category/:categoryId" element={<ProductListPage />} /> */}
       {/* <Route path="/subcategory/:subcategoryId" element={<ProductListPage />} /> */}
 
