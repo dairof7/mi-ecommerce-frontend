@@ -8,7 +8,7 @@ export default {
   theme: {
     extend: {
       colors: { // Tu paleta de colores personalizada
-        'color-primary': '#260d33',   // .color1
+        'color-primary': '#02253d',   // .color1
         'color-secondary': '#003f69', // .color2
         'color-accent1': '#106b87',   // .color3
         'color-accent2': '#157a8c',   // .color4

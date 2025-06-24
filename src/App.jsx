@@ -2,7 +2,9 @@
 import React from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
+import FloatingButtons from './components/common/FloatingButtons';
+const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER;
+const FACEBOOK_PAGE_URL = import.meta.env.VITE_FACEBOOK_PAGE_URL;
 // Componentes de Layout
 import Navbar from './components/layout/Navbar';
 // import Footer from './components/layout/Footer'; // Opcional
@@ -19,6 +21,10 @@ function App() {
       <main className="flex-grow container mx-auto px-4 py-8">
         <RouterConfig /> {/* Renderiza tu componente de configuración de rutas aquí */}
       </main>
+      <FloatingButtons 
+        whatsappNumber={WHATSAPP_NUMBER} 
+        facebookPageUrl={FACEBOOK_PAGE_URL} 
+      />
       {/* <Footer /> */}
       <ToastContainer
         position="top-left"

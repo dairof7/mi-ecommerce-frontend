@@ -284,14 +284,14 @@ function HomePage() {
       />
       
       {/* Sección de Más Vendidos */}
-      <ProductSection 
+      {/* <ProductSection 
         title="Los Más Vendidos" 
         products={bestsellerProducts}
         icon={FaFire}
         isLoading={isLoadingBestsellers}
         error={!isLoadingBestsellers && bestsellerProducts.length === 0 && generalError}
         sectionId="bestseller-products"
-      />
+      /> */}
       
       {generalError && (!mainBanners.length && !categories.length && !featuredProducts.length && !bestsellerProducts.length) && (
         <p className="text-red-500 text-center py-10">Ocurrió un error al cargar algunos datos de la página: {generalError}</p>
