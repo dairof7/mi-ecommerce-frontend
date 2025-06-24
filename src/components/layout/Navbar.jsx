@@ -10,7 +10,7 @@ import {
 } from 'react-icons/fa';
 import { useCartState } from '../../contexts/CartContext';
 // import logoImage from '../../assets/logo.svg'; // Descomenta si tienes un logo
-
+import logoImage from '../../assets/logo_blanco.png';
 function Navbar() {
   const { isAuthenticated, user, refreshToken: currentRefreshToken } = useAuthState();
   const { itemCount } = useCartState();
@@ -74,10 +74,14 @@ function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo y Nombre */}
-          <Link to="/" className="flex items-center space-x-2 sm:space-x-3 rtl:space-x-reverse" onClick={closeAllMenus}>
-            {/* <img src={logoImage} className="h-7 sm:h-8" alt="Logo" /> */}
-            <span className="self-center text-lg sm:text-xl font-semibold whitespace-nowrap hover:text-color-neutral-light transition-colors">
-              MiEcommerce
+          <Link to="/" className="flex items-center space-x-3 rtl:space-x-reverse">
+          <img 
+              src={logoImage} // Usa la variable importada
+              className="h-8 sm:h-9" // Ajusta el tamaño según tu logo
+              alt="S" 
+            />
+            <span className="self-center text-xl sm:text-2xl font-semibold whitespace-nowrap hover:text-color-neutral-light transition-colors">
+              Solid Store {/* Nombre de tu tienda */}
             </span>
           </Link>
 
