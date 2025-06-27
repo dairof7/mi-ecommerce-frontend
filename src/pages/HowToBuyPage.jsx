@@ -39,7 +39,7 @@ const paymentMethodsData = [
 
 // Configuración de WhatsApp (idealmente desde variables de entorno o un archivo de configuración)
 const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || "TU_NUMERO_DE_WHATSAPP_CON_CODIGO_PAIS"; // Ej: "573001234567"
-const WHATSAPP_MESSAGE_HOWTOBUY = "Hola, tengo una pregunta sobre el proceso de compra en MiEcommerce.";
+const WHATSAPP_MESSAGE_HOWTOBUY = "Hola, tengo una pregunta sobre el proceso de compra en Solid Store.";
 
 // Componente de Sección Reutilizable
 const Section = ({ title, icon, children, id }) => (
@@ -63,7 +63,7 @@ function HowToBuyPage() {
     <div className="container mx-auto py-8 px-4">
       <header className="text-center mb-12">
         <h1 className="text-3xl sm:text-4xl font-bold text-color-primary mb-4">
-          ¿Cómo Comprar en MiEcommerce?
+          ¿Cómo Comprar en Solid Store?
         </h1>
         <p className="text-lg text-gray-600 max-w-3xl mx-auto">
           ¡Comprar con nosotros es fácil y seguro! Sigue estos sencillos pasos para obtener tus productos.
