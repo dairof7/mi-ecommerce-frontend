@@ -1,11 +1,3 @@
-
----
-
-### README for the Frontend (React)
-
-You can copy and paste this content into a file named `README.md` in the root of your `frontend` folder.
-
-```markdown
 # MiEcommerce Frontend (React)
 
 This is the frontend for the MiEcommerce application, built with React. It consumes the Django backend API to provide an interactive user experience for the online store.
