@@ -120,7 +120,7 @@ const CategoryCarousel = ({ categories }) => {
             >
               <div className="aspect-square w-full overflow-hidden">
                 <img
-                  src={category.image || 'http://localhost:8000/media/categories/fire_tv.png'}
+                  src={category.image || '/logo.png'}
                   alt={category.name}
                   className="w-full h-full object-cover group-hover/item:scale-105 transition-transform duration-300"
                 />

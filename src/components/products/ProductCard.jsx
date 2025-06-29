@@ -22,10 +22,10 @@ function ProductCard({ product }) {
 
   if (!product) return null;
 
-  const imageUrl = product.images && product.images.length > 0 
-                   ? product.images[0].image 
-                   : 'https://via.placeholder.com/300x300.png?text=Sin+Imagen';
-
+const imageUrl = product.images && product.images.length > 0 
+  ? product.images[0].image 
+  : '/logo.png';
+  
   const handleAddToCart = async (e) => {
     // Prevenir que el clic en el botón también active el Link de la tarjeta si estuvieran anidados de otra forma
     if (e) { // e puede ser undefined si se llama programáticamente

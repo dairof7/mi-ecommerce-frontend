@@ -147,7 +147,7 @@ function ProductDetailPage() {
 
   const mainImageUrl = product.images && product.images.length > 0
     ? product.images[currentImageIndex]?.image
-    : 'https://via.placeholder.com/600x600.png?text=Sin+Imagen';
+    : '/logo.png';
   
   const thumbnailImages = product.images || [];
 

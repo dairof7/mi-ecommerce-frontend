@@ -124,7 +124,7 @@ const handleCreateQuote = async () => {
                   {/* Asumiendo que item.product es un objeto y tiene 'images'
                       y tu serializador de CartItem anida el producto o al menos la imagen principal */}
                   <img
-                    src={item.product_detail?.images?.[0]?.image || item.product_image_url || 'https://via.placeholder.com/150'} // Ajusta 'product_image' o 'product_detail'
+                    src={item.product_detail?.images?.[0]?.image || item.product_image_url || '/logo.png'} // Ajusta 'product_image' o 'product_detail'
                     alt={item.product_name}
                     className="h-24 w-24 rounded-md object-cover object-center sm:h-32 sm:w-32"
                   />
