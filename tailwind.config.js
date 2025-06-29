@@ -20,5 +20,8 @@ export default {
       }
     },
   },
-  plugins: [],
+  plugins: [
+    require('tailwind-scrollbar-hide'),
+    // require('@tailwindcss/aspect-ratio'), // Útil para las imágenes
+  ],
 }
