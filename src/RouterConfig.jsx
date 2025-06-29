@@ -14,6 +14,8 @@ import CartPage from './pages/CartPage';
 import QuoteHistoryPage from './pages/QuoteHistoryPage';
 // import NotFoundPage from './pages/NotFoundPage';
 import HowToBuyPage from './pages/HowToBuyPage';
+import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
+import AdminQuotesPage from './pages/admin/AdminQuotesPage'; // Página que 
 // Componente para Rutas Protegidas
 const ProtectedRoute = () => {
   const { isAuthenticated, isLoading } = useAuthState();
@@ -58,7 +60,10 @@ function RouterConfig() {
       <Route path="/como-comprar" element={<HowToBuyPage />} />
       {/* <Route path="/category/:categoryId" element={<ProductListPage />} /> */}
       {/* <Route path="/subcategory/:subcategoryId" element={<ProductListPage />} /> */}
-
+      <Route element={<AdminProtectedRoute />}>
+          <Route path="/admin/quotes" element={<AdminQuotesPage />} />
+          {/* Añade más rutas de admin aquí */}
+      </Route>
       {/* Rutas que no deberían ser accesibles si ya estás logueado */}
       <Route element={<PublicRoute />}>
         <Route path="/login" element={<LoginPage />} />

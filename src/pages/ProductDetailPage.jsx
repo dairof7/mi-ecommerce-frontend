@@ -109,7 +109,7 @@ function ProductDetailPage() {
     setIsAddingToCart(true);
     cartDispatch({ type: 'REQUEST_START' });
     try {
-      await cartService.addOneProductToCart(product.id);
+      await cartService.addManyProductToCart(product.id, quantity); 
       const updatedCart = await cartService.getCart(); // Recargar el carrito
       // Si el carrito viene null, manejarlo según tu lógica de initialCartState
       if (updatedCart) {

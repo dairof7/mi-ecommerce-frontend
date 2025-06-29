@@ -51,7 +51,7 @@ function CartPage() {
       toast.success("Cantidad actualizada.");
       await refreshCart(); // Recargar el carrito completo
     } catch (error) {
-      toast.error(error.message || "Error al actualizar cantidad.");
+      toast.error(error.message || "Error al actualizar cantidad - No hay stock suficiente.");
       // cartDispatch({ type: 'REQUEST_FAILURE', payload: { error: error.message } }); // refreshCart maneja su propio error
     } finally {
       setIsProcessingItem(null);
@@ -135,7 +135,7 @@ const handleCreateQuote = async () => {
                     <div>
                       <div className="flex justify-between">
                         <h3 className="text-md">
-                          <Link to={`/products/${item.product}`} // item.product es el ID del producto
+                          <Link to={`/products/${item.product_id}`} // item.product es el ID del producto
                                 className="font-semibold text-color-primary hover:text-color-accent1">
                             {item.product_name}
                           </Link>

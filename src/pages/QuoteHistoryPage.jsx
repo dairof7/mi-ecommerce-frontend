@@ -37,7 +37,7 @@ const QuoteItemsList = ({ items }) => {
       {items.map(item => (
         <li key={item.id} className="text-sm text-gray-700">
           <span className="font-medium">{item.quantity} x {item.product_name}</span>
-          <span className="text-gray-500"> (@ {formatCurrency(item.price_at_quote)} c/u)</span>
+          <span className="text-gray-500"> ({formatCurrency(item.price_at_quote)} c/u)</span>
           <span className="float-right font-semibold">{formatCurrency(item.subtotal)}</span>
         </li>
       ))}

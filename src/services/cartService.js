@@ -80,6 +80,18 @@ const createQuoteFromCart = async () => {
   }
 };
 
+const addManyProductToCart = async (productId, quantity) => {
+  try {
+    const payload = { product_id: productId, quantity: quantity };
+    // URL del endpoint que ESTABLECE la cantidad
+    const response = await apiClient.post('/carts/carts/add_items/', payload); 
+    return response.data;
+  } catch (error) {
+    console.error("Error setting item quantity:", error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al actualizar cantidad en el carrito");
+  }
+};
+
 const addOneProductToCart = async (productId) => {
   try {
     const payload = { product_id: productId };
@@ -135,6 +147,7 @@ export default {
   removeItemFromCart,
   createQuoteFromCart,
   addOneProductToCart,
+  addManyProductToCart,
   getQuotes,
   getQuoteById,
   cancelQuote,
