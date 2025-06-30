@@ -61,7 +61,7 @@ function RouterConfig() {
       {/* <Route path="/category/:categoryId" element={<ProductListPage />} /> */}
       {/* <Route path="/subcategory/:subcategoryId" element={<ProductListPage />} /> */}
       <Route element={<AdminProtectedRoute />}>
-          <Route path="/admin/quotes" element={<AdminQuotesPage />} />
+          <Route path="/manage/quotes" element={<AdminQuotesPage />} />
           {/* Añade más rutas de admin aquí */}
       </Route>
       {/* Rutas que no deberían ser accesibles si ya estás logueado */}

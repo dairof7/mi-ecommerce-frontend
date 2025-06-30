@@ -88,10 +88,18 @@ function Navbar() {
           {/* Navegación Desktop */}
           <div className="hidden md:flex md:items-center md:space-x-4">
             <Link to="/products" className={`${desktopLinkClasses} px-3 py-2 rounded-md text-sm font-medium`}>Productos</Link>
+
             <Link to="/como-comprar" className={`${desktopLinkClasses} px-3 py-2 rounded-md text-sm font-medium`}>Cómo Comprar</Link>
             
             {isAuthenticated ? (
               <>
+              {user?.is_staff && (
+                   <Link to="/manage/quotes" // <-- RUTA ACTUALIZADA      onClick={closeAllMenus} 
+                    className={`${desktopLinkClasses} px-3 py-2 rounded-md text-sm font-medium`}
+                    >
+                    Gestionar Pedidos
+                    </Link>
+              )}
                 {/* Contenedor del Carrito con position: relative */}
                 <Link to="/cart" className={`relative p-2 ${desktopLinkClasses} rounded-md hover:bg-color-secondary`}>
                   <FaShoppingCart size={22} />
@@ -140,12 +148,14 @@ function Navbar() {
           {/* Botón Hamburguesa e Icono de Carrito en Mobile */}
           <div className="md:hidden flex items-center">
             {isAuthenticated && (
+              
                 // Contenedor del Carrito en Mobile con position: relative
                 <Link to="/cart" className={`relative p-2 mr-2 ${desktopLinkClasses} rounded-md hover:bg-color-secondary`} onClick={closeAllMenus}>
                     <FaShoppingCart size={22} />
                     {itemCount > 0 && ( <span className={cartBadgeClasses}>{itemCount}</span> )}
                 </Link>
             )}
+            
             <button 
                 onClick={toggleMobileMenu} 
                 type="button" 
@@ -168,6 +178,14 @@ function Navbar() {
             <Link to="/como-comprar" onClick={closeAllMenus} className={`${commonLinkClasses} ${mobileLinkClasses}`}>Cómo Comprar</Link>
             {isAuthenticated ? (
               <>
+                {  user?.is_staff && (
+                   <Link to="/manage/quotes" // <-- RUTA ACTUALIZADA      onClick={closeAllMenus} 
+                    className={`${commonLinkClasses} ${mobileLinkClasses}`}
+                    onClick={closeAllMenus}
+                    >
+                    Gestionar Pedidos
+                    </Link>
+                )}
                 <Link to="/profile" onClick={closeAllMenus} className={`${commonLinkClasses} ${mobileLinkClasses} flex items-center`}><FaUserCircle className="mr-2 text-gray-500"/>Mi Perfil</Link>
                 <Link to="/quotes" onClick={closeAllMenus} className={`${commonLinkClasses} ${mobileLinkClasses} flex items-center`}><FaFileInvoiceDollar className="mr-2 text-gray-500"/>Mis Cotizaciones</Link>
                 <hr className="my-1"/>
