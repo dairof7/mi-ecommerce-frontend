@@ -1,72 +1,94 @@
-// src/pages/admin/POSPage.jsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useCartState, useCartDispatch } from '../../contexts/CartContext';
 import cartService from '../../services/cartService';
+import authService from '../../services/authService';
+import useDebounce from '../../hooks/useDebounce';
 import { toast } from 'react-toastify';
-import { FaUserPlus, FaFileInvoiceDollar, FaTrash } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
-// Reutiliza componentes de otras páginas si los tienes en 'common'
-// import { Loader, formatCurrency } from '../utils/helpers'; 
-// Por ahora los defino aquí por simplicidad:
-const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+import { FaUserPlus, FaFileInvoiceDollar, FaTrash, FaUserCheck, FaTimes, FaSpinner } from 'react-icons/fa';
+
+// --- Componentes Internos ---
+const formatCurrency = (value) => {
+    if (value === null || value === undefined) return 'N/A';
+    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+};
+
+const Loader = ({ message = "Procesando..." }) => (
+    <div className="absolute inset-0 bg-white bg-opacity-75 flex justify-center items-center z-20">
+      <div className="flex items-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-color-secondary"></div>
+        <p className="ml-3 text-color-secondary">{message}</p>
+      </div>
+    </div>
+);
+// --- Fin Componentes Internos ---
 
 function POSPage() {
-  const { items, itemCount, totalAmount, isCartLoading } = useCartState();
+  const { items, itemCount, totalAmount, isLoading: isCartLoading } = useCartState();
   const cartDispatch = useCartDispatch();
   const navigate = useNavigate();
 
-  // Estados para el formulario del cliente invitado
+  // Estados para el formulario del cliente
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerDocument, setCustomerDocument] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
 
-  const [isProcessingItem, setIsProcessingItem] = useState(false);
+  // Estados para la lógica de la página
+  const [isProcessingSale, setIsProcessingSale] = useState(false); // Estado unificado para la acción de venta
 
-  const refreshCart = async () => {
-     cartDispatch({ type: 'REQUEST_START' });
-     try {
-         const cartData = await cartService.getCart();
-         cartDispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: cartData } });
-     } catch (error) {
-         cartDispatch({ type: 'REQUEST_FAILURE', payload: { error: "Error al recargar el carrito" } });
-         toast.error("No se pudo actualizar el carrito.");
-     }
+  // Estados para búsqueda de usuarios
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
+
+  // Efecto para buscar usuarios
+  useEffect(() => {
+    if (debouncedSearchTerm.trim() && !selectedUser) {
+      setIsSearching(true);
+      authService.searchUsers(debouncedSearchTerm).then(results => {
+        setSearchResults(results || []);
+        setIsSearching(false);
+      }).catch(error => {
+        console.error("Error en la búsqueda:", error);
+        setIsSearching(false);
+        setSearchResults([]);
+      });
+    } else {
+      setSearchResults([]);
+    }
+  }, [debouncedSearchTerm, selectedUser]);
+
+  // --- Manejadores de Eventos ---
+  const refreshCart = useCallback(async () => {
+    cartDispatch({ type: 'REQUEST_START' });
+    try {
+        const cartData = await cartService.getCart();
+        cartDispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: cartData } });
+    } catch (error) {
+        cartDispatch({ type: 'REQUEST_FAILURE', payload: { error: "Error al recargar el carrito" } });
+        toast.error("No se pudo actualizar el carrito.");
+    }
+  }, [cartDispatch]);
+
+  const handleSelectUser = (user) => {
+    setSelectedUser(user);
+    setCustomerName(user.full_name || `${user.first_name} ${user.last_name}`.trim());
+    setCustomerEmail(user.email);
+    setCustomerDocument(user.document || '');
+    setCustomerPhone(user.phone || '');
+    setSearchResults([]);
+    setSearchTerm('');
   };
 
- const handleUpdateQuantity = async (productId, newQuantity) => {
-    if (newQuantity < 1) return;
-    const itemToUpdate = items.find(item => item.product_id === productId); // Asume que item.product es el ID del producto
-    if (!itemToUpdate) return;
-
-    setIsProcessingItem({ type: 'qty', itemId: itemToUpdate.id });
-    // cartDispatch({ type: 'REQUEST_START' }); // refreshCart ya lo hace
-    try {
-      await cartService.updateItemQuantity(productId, newQuantity);
-      toast.success("Cantidad actualizada.");
-      await refreshCart(); // Recargar el carrito completo
-    } catch (error) {
-      toast.error(error.message || "Error al actualizar cantidad - No hay stock suficiente.");
-      // cartDispatch({ type: 'REQUEST_FAILURE', payload: { error: error.message } }); // refreshCart maneja su propio error
-    } finally {
-      setIsProcessingItem(null);
-    }
-  };
-
-  const handleRemoveItem = async (cartItemId) => {
-    setIsProcessingItem({ type: 'remove', itemId: cartItemId });
-    // cartDispatch({ type: 'REQUEST_START' });
-    try {
-      await cartService.removeItemFromCart(cartItemId);
-      toast.info("Producto eliminado del carrito.");
-      await refreshCart(); // Recargar el carrito completo
-    } catch (error) {
-      toast.error(error.message || "Error al eliminar producto.");
-      // cartDispatch({ type: 'REQUEST_FAILURE', payload: { error: error.message } });
-    } finally {
-      setIsProcessingItem(null);
-    }
+  const clearSelectedUser = () => {
+    setSelectedUser(null);
+    setCustomerName('');
+    setCustomerEmail('');
+    setCustomerDocument('');
+    setCustomerPhone('');
   };
 
   const handleCreatePosSale = async (e) => {
@@ -76,185 +98,135 @@ function POSPage() {
       return;
     }
     
-    setIsProcessingItem(true);
+    setIsProcessingSale(true); // Usar el estado correcto
     const payload = {
       customer: {
         name: customerName,
         email: customerEmail,
         document: customerDocument,
         phone: customerPhone,
-      }
+      },
+      user_id: selectedUser ? selectedUser.id : null,
     };
     
     try {
-      // Usamos la misma función de servicio, pero ahora con el payload
       const quoteData = await cartService.createQuoteFromCart(payload);
       cartDispatch({ type: 'CLEAR_CART_SUCCESS' });
       toast.success(`Venta en punto físico registrada (Cotización #${quoteData.id})`);
-      
-      // El vendedor ahora debe ir a finalizar la venta
       navigate(`/manage/quotes`, { state: { highlightedQuoteId: quoteData.id } });
 
     } catch (error) {
       const errorMsg = error.detail || error.error || error.message || "Error al registrar la venta.";
       toast.error(errorMsg);
     } finally {
-      setIsProcessingItem(false);
+      setIsProcessingSale(false); // Usar el estado correcto
     }
   };
+
+  const handleRemoveItem = async (cartItemId) => {
+    // Si necesitas un loader por item, necesitarías un estado como `processingItemId`
+    try {
+      await cartService.removeItemFromCart(cartItemId);
+      toast.info("Producto eliminado del carrito.");
+      await refreshCart();
+    } catch (error) {
+      toast.error(error.message || "Error al eliminar producto.");
+    }
+  };
+
+
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold text-color-primary mb-6">Punto de Venta (POS)</h1>
-      <p className="text-gray-600 mb-8">Usa esta interfaz para registrar ventas realizadas en la tienda física. Los productos añadidos aquí usan tu carrito de administrador.</p>
+      <p className="text-gray-600 mb-8 max-w-3xl">Utiliza esta interfaz para añadir productos al carrito (de tu cuenta de admin) y registrar ventas para clientes en la tienda física.</p>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Columna para el formulario del cliente y el resumen */}
         <div className="lg:col-span-1 lg:order-2">
           <form onSubmit={handleCreatePosSale} className="bg-white p-6 rounded-lg shadow-lg sticky top-24">
             <h2 className="text-xl font-semibold text-color-secondary mb-4 flex items-center">
-              <FaUserPlus className="mr-2" /> Datos del Cliente (Opcional)
+              <FaUserPlus className="mr-2" /> Datos del Cliente
             </h2>
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="customerName" className="block text-sm font-medium text-gray-700">Nombre</label>
-                <input type="text" id="customerName" value={customerName} onChange={e => setCustomerName(e.target.value)} className="input-style w-full mt-1" />
-              </div>
-              <div>
-                <label htmlFor="customerEmail" className="block text-sm font-medium text-gray-700">Email</label>
-                <input type="email" id="customerEmail" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} className="input-style w-full mt-1" />
-              </div>
-              <div>
-                <label htmlFor="customerDocument" className="block text-sm font-medium text-gray-700">Documento</label>
-                <input type="text" id="customerDocument" value={customerDocument} onChange={e => setCustomerDocument(e.target.value)} className="input-style w-full mt-1" />
-              </div>
-              <div>
-                <label htmlFor="customerPhone" className="block text-sm font-medium text-gray-700">Teléfono</label>
-                <input type="tel" id="customerPhone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} className="input-style w-full mt-1" />
-              </div>
+
+            {/* Buscador de Usuarios */}
+            <div className="relative mb-4">
+              <label htmlFor="userSearch" className="block text-sm font-medium text-gray-700">Buscar Cliente Registrado</label>
+              <input type="text" id="userSearch" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Nombre, email, documento..." className="input-style w-full mt-1" disabled={!!selectedUser} autoComplete="off" />
+              {isSearching && <p className="text-xs text-blue-500 mt-1 italic">Buscando...</p>}
+              {searchResults.length > 0 && (
+                <ul className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg">
+                  {searchResults.map(user => (
+                    <li key={user.id} onClick={() => handleSelectUser(user)} className="px-3 py-2 cursor-pointer hover:bg-color-accent1 hover:text-white border-b last:border-b-0 group">
+                      <p className="font-semibold text-sm">{user.full_name}</p>
+                      <p className="text-xs text-gray-500 group-hover:text-white">{user.email}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Usuario seleccionado */}
+            {selectedUser && (
+                <div className="p-3 mb-4 text-sm text-green-800 bg-green-100 rounded-lg flex justify-between items-center">
+                    <div>
+                        <p className="font-bold flex items-center"><FaUserCheck className="mr-2"/> Cliente Seleccionado:</p>
+                        <p>{selectedUser.full_name}</p>
+                    </div>
+                    <button type="button" onClick={clearSelectedUser} className="text-red-600 hover:text-red-800 font-bold p-1 rounded-full hover:bg-red-200" title="Desvincular cliente"><FaTimes /></button>
+                </div>
+            )}
+            
+            {/* Formulario de invitado */}
+            <div className={`space-y-4 transition-opacity duration-300 ${selectedUser ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+              <p className="text-xs text-center text-gray-500 border-b pb-2 mb-2">O ingresa los datos para un cliente invitado:</p>
+              <div><label htmlFor="customerName" className="block text-sm font-medium text-gray-700">Nombre</label><input type="text" id="customerName" value={customerName} onChange={e => setCustomerName(e.target.value)} className="input-style w-full mt-1" /></div>
+              <div><label htmlFor="customerEmail" className="block text-sm font-medium text-gray-700">Email</label><input type="email" id="customerEmail" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} className="input-style w-full mt-1" /></div>
+              <div><label htmlFor="customerDocument" className="block text-sm font-medium text-gray-700">Documento</label><input type="text" id="customerDocument" value={customerDocument} onChange={e => setCustomerDocument(e.target.value)} className="input-style w-full mt-1" /></div>
+              <div><label htmlFor="customerPhone" className="block text-sm font-medium text-gray-700">Teléfono</label><input type="tel" id="customerPhone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} className="input-style w-full mt-1" /></div>
             </div>
             
             <hr className="my-6" />
 
+            {/* Resumen y Botón */}
             <h3 className="text-lg font-medium text-color-primary">Resumen</h3>
-            <dl className="mt-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <dt className="text-sm text-gray-600">Subtotal ({itemCount} items)</dt>
-                <dd className="text-sm font-medium text-gray-900">{formatCurrency(totalAmount)}</dd>
-              </div>
-            </dl>
+            <dl className="mt-4 space-y-4"><div className="flex items-center justify-between"><dt className="text-sm text-gray-600">Subtotal ({itemCount} items)</dt><dd className="text-sm font-medium text-gray-900">{formatCurrency(totalAmount)}</dd></div></dl>
             <div className="mt-6">
-              <button
-                type="submit"
-                disabled={isProcessingItem || itemCount === 0 || isCartLoading}
-                className="w-full flex items-center justify-center rounded-md border border-transparent bg-green-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-60"
-              >
-                {isProcessingItem ? 'Registrando...' : 'Registrar Venta y Generar Cotización'}
-                <FaFileInvoiceDollar className="ml-2"/>
+              <button type="submit" disabled={isProcessingSale || itemCount === 0 || isCartLoading} className="w-full flex items-center justify-center rounded-md border border-transparent bg-green-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                {isProcessingSale ? <FaSpinner className="animate-spin mr-2" /> : <FaFileInvoiceDollar className="ml-2"/>}
+                {isProcessingSale ? 'Registrando...' : 'Registrar Venta'}
               </button>
             </div>
           </form>
         </div>
 
-        {/* Columna para el carrito y añadir productos */}
+        {/* Columna del Carrito */}
         <div className="lg:col-span-2 lg:order-1">
           <h2 className="text-xl font-semibold text-color-secondary mb-4">Carrito Actual</h2>
-          {/* Aquí podrías tener un buscador de productos para añadir al carrito */}
-          {/* ... */}
-          
-          {/* Listado de items del carrito */}
-          {itemCount > 0 ? (
-            <div className="lg:w-2/3">
-                      {isCartLoading && items.length > 0 && <Loader />} {/* Loader encima de la lista si se está actualizando */}
-                      <ul role="list" className="divide-y divide-gray-200 border-b border-gray-200">
-                        {items.map((item) => (
-                          <li key={item.id} className="flex py-6 sm:py-10">
-                            <div className="flex-shrink-0">
-                              {/* Asumiendo que item.product es un objeto y tiene 'images'
-                                  y tu serializador de CartItem anida el producto o al menos la imagen principal */}
-                              <img
-                                src={item.product_detail?.images?.[0]?.image || item.product_image_url || '/logo.png'} // Ajusta 'product_image' o 'product_detail'
-                                alt={item.product_name}
-                                className="h-24 w-24 rounded-md object-cover object-center sm:h-32 sm:w-32"
-                              />
-                            </div>
-            
-                            <div className="ml-4 flex flex-1 flex-col justify-between sm:ml-6">
-                              <div className="relative pr-9 sm:grid sm:grid-cols-2 sm:gap-x-6 sm:pr-0">
-                                <div>
-                                  <div className="flex justify-between">
-                                    <h3 className="text-md">
-                                      <Link to={`/products/${item.product_id}`} // item.product es el ID del producto
-                                            className="font-semibold text-color-primary hover:text-color-accent1">
-                                        {item.product_name}
-                                      </Link>
-                                    </h3>
-                                  </div>
-                                  {/* <p className="mt-1 text-sm text-gray-500">{item.product_detail?.short_description}</p> */}
-                                  <p className="mt-1 text-sm font-medium text-color-secondary">
-                                    {formatCurrency(item.product_sale_price)} c/u
-                                  </p>
-                                </div>
-            
-                                <div className="mt-4 sm:mt-0 sm:pr-9">
-                                  <label htmlFor={`quantity-${item.id}`} className="sr-only">
-                                    Cantidad, {item.product_name}
-                                  </label>
-                                  <div className="flex items-center border border-gray-300 rounded w-fit">
-                                    <button 
-                                        onClick={() => handleUpdateQuantity(item.product_id, item.quantity - 1)}
-                                        disabled={item.quantity <= 1 || isCartLoading}
-                                        className="px-2 py-1 text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-50 rounded-l"
-                                    >-</button>
-                                    <input 
-                                        type="number" 
-                                        id={`quantity-${item.id}`}
-                                        value={item.quantity}
-                                        min="1"
-                                        // max={item.product_detail?.stock} // Necesitarías el stock aquí
-                                        onChange={(e) => {
-                                            const newQty = parseInt(e.target.value);
-                                            if (!isNaN(newQty) && newQty >= 1) {
-                                                handleUpdateQuantity(item.product, newQty);
-                                            }
-                                        }}
-                                        className="w-10 text-center border-l border-r border-gray-300 py-1 focus:outline-none text-sm"
-                                    />
-                                    <button 
-                                        onClick={() => handleUpdateQuantity(item.product_id, item.quantity + 1)}
-                                        // disabled={item.quantity >= item.product_detail?.stock || isCartLoading}
-                                        disabled={isCartLoading} // Simplificado, el backend validará stock
-                                        className="px-2 py-1 text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-50 rounded-r"
-                                    >+</button>
-                                  </div>
-            
-                                  <div className="absolute right-0 top-0">
-                                    <button 
-                                      type="button" 
-                                      onClick={() => handleRemoveItem(item.id)}
-                                      disabled={isCartLoading}
-                                      className="-m-2 inline-flex p-2 text-gray-400 hover:text-red-500"
-                                    >
-                                      <span className="sr-only">Eliminar</span>
-                                      <FaTrash className="h-5 w-5" aria-hidden="true" />
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                               <p className="mt-4 flex space-x-2 text-sm text-gray-700">
-                                {/* {item.product_detail?.stock > 0 ? (
-                                    <FaCheckCircle className="h-5 w-5 flex-shrink-0 text-green-500" aria-hidden="true" />
-                                ) : (
-                                    <FaTimesCircle className="h-5 w-5 flex-shrink-0 text-red-500" aria-hidden="true" />
-                                )} */}
-                                {/* <span>{item.product_detail?.stock > 0 ? 'En stock' : 'Agotado temporalmente'}</span> */}
-                              </p>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+          <div className="mb-4">
+            <Link to="/products" className="text-color-accent2 hover:underline">+ Añadir más productos (Ir al listado)</Link>
+          </div>
+          {isCartLoading && <Loader message="Actualizando carrito..."/>}
+          {!isCartLoading && itemCount > 0 ? (
+            <div className="bg-white rounded-lg shadow-md">
+                <ul role="list" className="divide-y divide-gray-200">
+                    {items.map((item) => (
+                    <li key={item.id} className="flex py-4 px-4 items-center">
+                        <div className="flex-shrink-0">
+                            <img src={item.product_image_url || '/logo.png'} alt={item.product_name} className="h-16 w-16 rounded-md object-cover" />
+                        </div>
+                        <div className="ml-4 flex-1">
+                            <p className="font-medium text-gray-800 text-sm">{item.product_name}</p>
+                            <p className="text-xs text-gray-500">{formatCurrency(item.product_sale_price)} x {item.quantity} = <strong>{formatCurrency(item.subtotal)}</strong></p>
+                        </div>
+                        <div className="flex items-center">
+                            <button onClick={() => handleRemoveItem(item.id)} className="text-gray-400 hover:text-red-600 p-2"><FaTrash /></button>
+                        </div>
+                    </li>
+                    ))}
+                </ul>
+            </div>
           ) : (
-            <p className="py-10 text-center text-gray-500 bg-gray-50 rounded-md">El carrito está vacío. Busca y añade productos.</p>
+            !isCartLoading && <p className="py-10 text-center text-gray-500 bg-gray-50 rounded-md">El carrito está vacío.</p>
           )}
         </div>
       </div>
