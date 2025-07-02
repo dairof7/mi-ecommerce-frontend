@@ -47,9 +47,12 @@ function CartPage() {
     setIsProcessingItem({ type: 'qty', itemId: itemToUpdate.id });
     // cartDispatch({ type: 'REQUEST_START' }); // refreshCart ya lo hace
     try {
-      await cartService.updateItemQuantity(productId, newQuantity);
+      const updatedCartData = await cartService.addItemToCart(productId, newQuantity);
+        // 2. Despacha la acción de éxito CON los datos que ya recibiste.
+        // Esto actualiza el estado local INMEDIATAMENTE sin otra llamada a la API.
+      cartDispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: updatedCartData } });
       toast.success("Cantidad actualizada.");
-      await refreshCart(); // Recargar el carrito completo
+      // await refreshCart(); // Recargar el carrito completo
     } catch (error) {
       toast.error(error.message || "Error al actualizar cantidad - No hay stock suficiente.");
       // cartDispatch({ type: 'REQUEST_FAILURE', payload: { error: error.message } }); // refreshCart maneja su propio error
@@ -62,9 +65,10 @@ function CartPage() {
     setIsProcessingItem({ type: 'remove', itemId: cartItemId });
     // cartDispatch({ type: 'REQUEST_START' });
     try {
-      await cartService.removeItemFromCart(cartItemId);
+      const updatedCartData = await cartService.removeItemFromCart(cartItemId);
+      cartDispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: updatedCartData } });
       toast.info("Producto eliminado del carrito.");
-      await refreshCart(); // Recargar el carrito completo
+      // await refreshCart(); // Recargar el carrito completo
     } catch (error) {
       toast.error(error.message || "Error al eliminar producto.");
       // cartDispatch({ type: 'REQUEST_FAILURE', payload: { error: error.message } });
@@ -109,7 +113,6 @@ const handleCreateQuote = async () => {
       </div>
     );
   }
-
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold text-color-primary mb-8">Tu Carrito de Compras</h1>
@@ -142,9 +145,13 @@ const handleCreateQuote = async () => {
                         </h3>
                       </div>
                       {/* <p className="mt-1 text-sm text-gray-500">{item.product_detail?.short_description}</p> */}
-                      <p className="mt-1 text-sm font-medium text-color-secondary">
+                      <p className="mt-1 text-sm font-medium text-color-secondary text-gray-400 line-through">
                         {formatCurrency(item.product_sale_price)} c/u
                       </p>
+                      
+                      <p className="text-sm font-bold text-color-accent1">{formatCurrency(item.product_final_price)} x {item.quantity} = <strong>{formatCurrency(item.subtotal)}</strong></p>
+
+
                     </div>
 
                     <div className="mt-4 sm:mt-0 sm:pr-9">
