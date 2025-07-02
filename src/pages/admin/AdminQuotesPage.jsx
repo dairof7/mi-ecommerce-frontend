@@ -157,7 +157,7 @@ function AdminQuotesPage() {
                 updatedQuote = await quoteAdminService.markAsShipped(quoteId);
                 toast.success(`Pedido #${quoteId} marcado como enviado.`);
             }
-const updatedQuoteObject = updatedQuote.quote;
+            const updatedQuoteObject = updatedQuote.quote;
 
             if (updatedQuoteObject) {
                 // Actualizar el estado local con el objeto completo devuelto por la API
@@ -174,12 +174,11 @@ const updatedQuoteObject = updatedQuote.quote;
             }
 
         } catch (error) {
-            toast.error(error.message || `Error al procesar la acción para la cotización #${quoteId}.`);
+            toast.error(error.error || `Error al procesar la acción para la cotización #${quoteId}.`);
         } finally {
             setProcessingQuoteId(null);
         }
     };
-
 
     return (
         <div className="container mx-auto py-8 px-4">
@@ -235,8 +234,19 @@ const updatedQuoteObject = updatedQuote.quote;
                                         <div className="text-xs text-gray-500">{formatDate(quote.created_at)}</div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="font-medium text-gray-900">{quote.user_detail?.name || quote.user}</div>
-                                        <div className="text-xs text-gray-500">{quote.user_detail?.email || 'N/A'}</div>
+                                        <div className="font-medium text-gray-900">
+                                            {/* Si hay customer_name, es un invitado. Si no, usa el del usuario registrado. */}
+                                            {quote.customer_name || quote.user_detail?.user || 'Invitado Anónimo'}
+                                            {/* {quote.user || 'Invitado Anónimo'} */}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                            {quote.customer_email || quote.user_email || 'Sin email'}
+                                        </div>
+                                            {(quote.customer_phone || quote.user_detail?.phone) &&
+                                                <div className="text-xs text-gray-500 mt-1">
+                                                    Tel: {quote.customer_phone || quote.user_detail?.phone}
+                                                </div>
+                                            }
                                     </td>
                                     <td className="px-6 py-4 font-bold">{formatCurrency(quote.total)}</td>
                                     <td className="px-6 py-4">{getStatusBadge(quote.status)}</td>
