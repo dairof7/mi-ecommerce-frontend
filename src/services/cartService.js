@@ -58,8 +58,9 @@ const updateItemQuantity = async (productId, quantity) => {
 const removeItemFromCart = async (itemId) => {
   try {
     // Tu endpoint es /api/carts/carts/remove_item/{item_id}/
-    await apiClient.delete(`/carts/carts/remove_item/${itemId}/`);
-    return { itemId }; // Devolver el ID del item eliminado para actualizar el estado
+    const response = await apiClient.delete(`/carts/carts/remove_item/${itemId}/`);
+    // return { itemId }; // Devolver el ID del item eliminado para actualizar el estado
+    return response.data;
   } catch (error) {
     console.error(`Error removing item ${itemId} from cart:`, error.response?.data || error.message);
     throw error.response?.data || new Error("Error al eliminar item del carrito");
