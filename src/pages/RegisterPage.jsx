@@ -63,7 +63,6 @@ function RegisterPage() {
       
       if (err.response && err.response.data) {
         const backendErrors = err.response.data;
-        console.error("Errores del backend:", backendErrors);
 
         let fieldErrorsHandled = false;
         // Iterar sobre las claves del objeto de errores del backend
