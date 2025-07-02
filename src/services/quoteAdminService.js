@@ -4,7 +4,7 @@ import apiClient from './api';
 const finalizeSale = async (quoteId) => {
     try {
         const response = await apiClient.post(`/carts/quotes/${quoteId}/finalize_sale/`);
-        return response.data.quote; // Asume que la respuesta es { message, quote }
+        return response.data; // Asume que la respuesta es { message, quote }
     } catch (error) {
         throw error.response?.data || new Error("Error al finalizar la venta.");
     }

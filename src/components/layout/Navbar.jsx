@@ -94,18 +94,27 @@ function Navbar() {
             {isAuthenticated ? (
               <>
               {user?.is_staff && (
+                <>
                    <Link to="/manage/quotes" // <-- RUTA ACTUALIZADA      onClick={closeAllMenus} 
                     className={`${desktopLinkClasses} px-3 py-2 rounded-md text-sm font-medium`}
                     >
                     Gestionar Pedidos
                     </Link>
+
+                    <Link to="/pos" // <-- RUTA ACTUALIZADA      onClick={closeAllMenus} 
+                    className={`${desktopLinkClasses} px-3 py-2 rounded-md text-sm font-medium`}
+                    >
+                    POS
+                    </Link>
+                </>
               )}
                 {/* Contenedor del Carrito con position: relative */}
+                {!user?.is_staff && (
                 <Link to="/cart" className={`relative p-2 ${desktopLinkClasses} rounded-md hover:bg-color-secondary`}>
                   <FaShoppingCart size={22} />
                   {itemCount > 0 && ( <span className={cartBadgeClasses}>{itemCount}</span> )}
                 </Link>
-                
+                )}
                 <div className="relative" ref={userMenuRef}>
                   <button 
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}

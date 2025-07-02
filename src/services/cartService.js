@@ -67,12 +67,12 @@ const removeItemFromCart = async (itemId) => {
 };
 
 // Crear una cotización desde el carrito
-const createQuoteFromCart = async () => {
+const createQuoteFromCart = async (payload = {}) => {
   try {
     // Tu endpoint es POST /api/carts/carts/create_quote/
     // El schema.json para esta acción indica un requestBody de #/components/schemas/Cart,
     // lo cual probablemente no es necesario si la acción opera sobre el carrito actual del usuario.
-    const response = await apiClient.post('/carts/carts/create_quote/');
+    const response = await apiClient.post('/carts/carts/create_quote/', payload);
     return response.data; // Debería devolver la Quote creada
   } catch (error) {
     console.error("Error creating quote:", error.response?.data || error.message);
