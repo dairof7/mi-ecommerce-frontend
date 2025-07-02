@@ -122,7 +122,7 @@ function Navbar() {
                     aria-haspopup="true" aria-expanded={isUserMenuOpen}
                   >
                     <FaUserCircle size={22} />
-                    <span className="ml-2 hidden lg:inline text-sm">{user?.email?.split('@')[0] || 'Mi Cuenta'}</span>
+                    <span className="ml-2 hidden lg:inline text-sm">{user?.user || 'Mi Cuenta'}</span>
                     <FaAngleDown size={16} className="ml-1 hidden lg:inline" />
                   </button>
                   {isUserMenuOpen && (

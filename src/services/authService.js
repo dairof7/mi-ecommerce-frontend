@@ -67,6 +67,21 @@ const updateProfile = async (profileData) => {
     return response.data;
 };
 
+const searchUsers = async (searchTerm) => {
+  if (!searchTerm || searchTerm.trim().length < 2) { // No buscar si el término es muy corto
+    return []; // Devolver array vacío
+  }
+  try {
+    const response = await apiClient.get('/accounts/user-search/', {
+      params: { search: searchTerm }
+    });
+    return response.data.results; // El ListAPIView no pagina por defecto, si lo hace, sería response.data.results
+  } catch (error) {
+    console.error("Error searching users:", error);
+    // No lanzar un error que pare la UI, solo devolver array vacío
+    return [];
+  }
+};
 
 export default {
   register,
@@ -75,4 +90,5 @@ export default {
   refreshToken,
   getProfile,
   updateProfile,
+  searchUsers,
 };
