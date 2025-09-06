@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, Link, useParams } from 'react-router-dom';
 import productService from '../services/productService';
+import siteSettingsService from '../services/siteSettingsService';
 import ProductCard from '../components/products/ProductCard';
 import FiltersPanel from '../components/products/FiltersPanel'; // <-- Importa el nuevo componente
+import BannerCarousel from '../components/common/BannerCarousel';
 import { FaFilter, FaTimes } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
@@ -48,6 +50,7 @@ function ProductListPage() {
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [relevantTags, setRelevantTags] = useState([]);
+  const [topBanner, setTopBanner] = useState([]);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 0 });
   
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
@@ -135,6 +138,19 @@ function ProductListPage() {
 
   }, [initialFilters.category, initialFilters.subcategory, initialFilters.search]); // Dependencias estables
 
+  // 3. Efecto para cargar el banner superior (solo una vez)
+  useEffect(() => {
+    const fetchBanner = async () => {
+        try {
+            const bannerData = await siteSettingsService.getBanners({ placement: 'product_list_top', limit: 1 });
+            setTopBanner(bannerData || []);
+        } catch (error) {
+            console.error("Error fetching top banner:", error);
+            // No es necesario mostrar un toast por un banner
+        }
+    };
+    fetchBanner();
+  }, []); // El array vacío asegura que se ejecute solo una vez
 
   // --- MANEJADORES DE EVENTOS (Estables gracias a useCallback) ---
   const handleFiltersApply = useCallback((allFilters) => {
@@ -166,10 +182,12 @@ function ProductListPage() {
   return (
     <div className="container mx-auto px-2 sm:px-4">
       <h1 className="text-2xl sm:text-3xl font-bold text-color-primary my-4 sm:my-6 text-center md:text-left">
-        Listado de Productos
-        {initialFilters.category && categories.find(c => c.id.toString() === initialFilters.category) && ` en ${categories.find(c => c.id.toString() === initialFilters.category)?.name}`}
+        {initialFilters.category && categories.find(c => c.id.toString() === initialFilters.category) && ` ${categories.find(c => c.id.toString() === initialFilters.category)?.name}`}
         {initialFilters.subcategory && subcategories.find(s => s.id.toString() === initialFilters.subcategory) && ` > ${subcategories.find(s => s.id.toString() === initialFilters.subcategory)?.name}`}
       </h1>
+
+      {/* Renderiza el banner si existe */}
+      {topBanner.length > 0 && <BannerCarousel banners={topBanner} />}
 
       <div className="md:hidden mb-4">
         <button onClick={() => setShowMobileFilters(true)} className="flex items-center bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 active:bg-gray-100 shadow-sm w-full justify-center">
