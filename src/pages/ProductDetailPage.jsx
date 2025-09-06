@@ -83,6 +83,17 @@ function ProductDetailPage() {
     setQuantity(value);
   };
 
+  const handleGoBack = () => {
+    // Si hay un historial de navegación en la sesión actual, retrocede.
+    // La clave 'default' se usa solo para la primera entrada en la pila de historial.
+    if (location.key !== 'default') {
+      navigate(-1);
+    } else {
+      // De lo contrario, navega a una página de respaldo segura.
+      navigate('/products');
+    }
+  };
+
 
   const handleAddToCart = async () => {
     if (!product || product.stock === 0) {
@@ -153,10 +164,10 @@ function ProductDetailPage() {
 
   return (
     <div className="container mx-auto py-4 sm:py-8 px-2 sm:px-4">
-      <div className="mb-1">
-        <Link to="/products" className="text-color-secondary hover:text-color-accent1 inline-flex items-center">
+      <div className="mb-4">
+        <button onClick={handleGoBack} className="text-color-secondary hover:text-color-accent1 inline-flex items-center font-medium">
             <FaChevronLeft className="mr-2" /> Volver al listado de productos
-        </Link>
+        </button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10 bg-white p-3 sm:p-6 md:p-8 rounded-lg shadow-xl">
         {/* Columna de Imágenes */}
