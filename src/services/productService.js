@@ -90,6 +90,15 @@ const getBestsellerProducts = async (params = {}) => { // Placeholder
   }
 };
 
+const getNewProducts = async (params = {}) => { // Placeholder
+  try {
+    const response = await apiClient.get('/products/new-arrivals/', { params });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching new-arrivals products:", error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al obtener los products mas nuevos");
+  }
+};
 
 export default {
   getProducts,
@@ -100,4 +109,5 @@ export default {
   getTags,
   getFeaturedProducts,
   getBestsellerProducts,
+  getNewProducts,
 };

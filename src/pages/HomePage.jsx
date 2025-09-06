@@ -104,6 +104,7 @@ function HomePage() {
   const [categories, setCategories] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [bestsellerProducts, setBestsellerProducts] = useState([]);
+  const [newProducts, setNewProducts] = useState([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -114,17 +115,19 @@ function HomePage() {
       setError(null);
       try {
         // Ejecutar todas las llamadas en paralelo para una carga más rápida
-        const [bannersData, categoriesData, featuredData, bestsellersData] = await Promise.all([
+        const [bannersData, categoriesData, featuredData, bestsellersData, newProductsData] = await Promise.all([
           siteSettingsService.getBanners({ placement: 'home_main', limit: 3 }).catch(e => { console.error("Banner fetch failed:", e); return []; }),
           productService.getCategories({ limit: 12 }).catch(e => { console.error("Category fetch failed:", e); return null; }),
           productService.getFeaturedProducts({ limit: 5 }).catch(e => { console.error("Featured products fetch failed:", e); return null; }),
-          productService.getBestsellerProducts({ limit: 5 }).catch(e => { console.error("Bestseller products fetch failed:", e); return null; })
+          productService.getBestsellerProducts({ limit: 5 }).catch(e => { console.error("Bestseller products fetch failed:", e); return null; }),
+          productService.getNewProducts({ limit: 5 }).catch(e => { console.error("New arrivals products fetch failed:", e); return null; })
         ]);
         
         setMainBanners(bannersData || []);
         setCategories(categoriesData?.results || categoriesData || []);
         setFeaturedProducts(featuredData?.results || featuredData || []);
         setBestsellerProducts(bestsellersData?.results || bestsellersData || []);
+        setNewProducts(newProductsData?.results || newProductsData || []);
 
       } catch (err) {
         const errorMsg = err.message || "Error al cargar los datos de la página principal.";
@@ -166,7 +169,15 @@ function HomePage() {
         isLoading={false} // La carga principal ya terminó
         sectionId="featured-products"
       />
-      
+
+      <ProductSection 
+        title="Los Más Nuevos" 
+        products={newProducts}
+        icon={FaFire}
+        isLoading={false}
+        sectionId="new-arrivals-products"
+      />
+
       <ProductSection 
         title="Los Más Vendidos" 
         products={bestsellerProducts}
