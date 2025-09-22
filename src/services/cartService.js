@@ -139,6 +139,25 @@ const cancelQuote = async (quoteId) => {
   }
 };
 
+const applyCoupon = async (code) => {
+  try {
+      const response = await apiClient.post('/carts/carts/apply-coupon/', { code });
+      return response.data;
+  } catch (error) {
+      // El backend devuelve un objeto { "error": "mensaje" }
+      throw error.response?.data || new Error('Error al aplicar el cupón');
+  }
+};
+
+const removeCoupon = async () => {
+  try {
+      const response = await apiClient.post('/carts/carts/remove-coupon/');
+      return response.data;
+  } catch (error) {
+      throw error.response?.data || new Error('Error al remover el cupón');
+  }
+};
+
 
 
 export default {
@@ -152,4 +171,11 @@ export default {
   getQuotes,
   getQuoteById,
   cancelQuote,
+  applyCoupon,
+  removeCoupon,
 };
+
+
+
+
+
