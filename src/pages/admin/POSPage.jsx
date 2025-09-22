@@ -4,9 +4,8 @@ import { useCartState, useCartDispatch } from '../../contexts/CartContext';
 import cartService from '../../services/cartService';
 import authService from '../../services/authService';
 import productService from '../../services/productService';
-import useDebounce from '../../hooks/useDebounce';
 import { toast } from 'react-toastify';
-import { FaUserPlus, FaFileInvoiceDollar, FaTrash, FaUserCheck, FaTimes, FaSpinner, FaSearch, FaPlusCircle, FaPlus, FaMinus } from 'react-icons/fa';
+import { FaUserPlus, FaFileInvoiceDollar, FaTrash, FaUserCheck, FaTimes, FaSpinner, FaSearch, FaPlusCircle, FaPlus, FaMinus, FaTimesCircle } from 'react-icons/fa';
 
 // --- Componentes Internos ---
 const formatCurrency = (value) => {
@@ -25,7 +24,7 @@ const Loader = ({ message = "Procesando..." }) => (
 // --- Fin Componentes Internos ---
 
 function POSPage() {
-  const { items, itemCount, totalAmount, isLoading: isCartLoading } = useCartState();
+  const { items, itemCount, subtotal, coupon, couponDiscount, total, isLoading: isCartLoading } = useCartState();
   const cartDispatch = useCartDispatch();
   const navigate = useNavigate();
 
@@ -40,13 +39,11 @@ function POSPage() {
   const [isSearchingUser, setIsSearchingUser] = useState(false);
   const [userSearchResults, setUserSearchResults] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const debouncedUserSearchTerm = useDebounce(searchTermUser, 400);
 
   // Estados para Búsqueda de Productos
   const [productSearchTerm, setProductSearchTerm] = useState('');
   const [isSearchingProduct, setIsSearchingProduct] = useState(false);
   const [productSearchResults, setProductSearchResults] = useState([]);
-  const debouncedProductSearchTerm = useDebounce(productSearchTerm, 400);
 
   // Estado de carga para acciones
   const [isProcessingSale, setIsProcessingSale] = useState(false);
@@ -54,26 +51,32 @@ function POSPage() {
 
   // --- Efectos ---
   useEffect(() => {
-    if (debouncedUserSearchTerm.trim() && !selectedUser) {
+    const timer = setTimeout(() => {
+      if (searchTermUser.trim() && !selectedUser) {
       setIsSearchingUser(true);
-      authService.searchUsers(debouncedUserSearchTerm)
+      authService.searchUsers(searchTermUser)
         .then(results => setUserSearchResults(results || []))
         .finally(() => setIsSearchingUser(false));
     } else {
       setUserSearchResults([]);
     }
-  }, [debouncedUserSearchTerm, selectedUser]);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchTermUser, selectedUser]);
   
   useEffect(() => {
-    if (debouncedProductSearchTerm.trim()) {
+    const timer = setTimeout(() => {
+    if (productSearchTerm.trim()) {
       setIsSearchingProduct(true);
-      productService.getProducts({ search: debouncedProductSearchTerm, limit: 5 })
+      productService.getProducts({ search: productSearchTerm, limit: 5 })
         .then(data => setProductSearchResults(data.results || []))
         .finally(() => setIsSearchingProduct(false));
     } else {
       setProductSearchResults([]);
     }
-  }, [debouncedProductSearchTerm]);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [productSearchTerm]);
 
   // --- Manejadores de Eventos ---
   const refreshCart = useCallback(async () => {
@@ -112,9 +115,9 @@ function POSPage() {
     }
     setProcessingItemId(product.id);
     try {
-      await cartService.addOneProductToCart(product.id);
-      await refreshCart();
-      toast.success(`"${product.name}" añadido al carrito.`);
+      const updatedCart = await cartService.addOneProductToCart(product.id);
+      cartDispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: updatedCart } });
+      toast.success(`"${product.name}" añadido al carrito.`); // Mensaje de éxito
       setProductSearchTerm('');
       setProductSearchResults([]);
     } catch (error) {
@@ -198,6 +201,40 @@ function POSPage() {
     }
   };
 
+  // --- Manejadores de Cupones ---
+  const [couponCode, setCouponCode] = useState('');
+
+  const handleApplyCoupon = async (e) => {
+    e.preventDefault();
+    if (!couponCode.trim()) {
+      toast.warn("Por favor, ingresa un código de cupón.");
+      return;
+    }
+    cartDispatch({ type: 'REQUEST_START' });
+    try {
+      const updatedCart = await cartService.applyCoupon(couponCode);
+      cartDispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: updatedCart } });
+      toast.success(`Cupón "${couponCode}" aplicado.`);
+      setCouponCode('');
+    } catch (error) {
+      const errorMsg = error.error || "El cupón no es válido o no se puede aplicar.";
+      cartDispatch({ type: 'REQUEST_FAILURE', payload: { error: errorMsg } });
+      toast.error(errorMsg);
+    }
+  };
+
+  const handleRemoveCoupon = async () => {
+    cartDispatch({ type: 'REQUEST_START' });
+    try {
+      const updatedCart = await cartService.removeCoupon();
+      cartDispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: updatedCart } });
+      toast.info("Cupón removido.");
+    } catch (error) {
+      toast.error(error.error || "No se pudo remover el cupón.");
+    }
+  };
+
+
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold text-color-primary mb-6">Punto de Venta (POS)</h1>
@@ -241,7 +278,37 @@ function POSPage() {
             </div>
             <hr className="my-6" />
             <h3 className="text-lg font-medium text-color-primary">Resumen</h3>
-            <dl className="mt-4 space-y-4"><div className="flex items-center justify-between"><dt className="text-sm text-gray-600">Subtotal ({itemCount} items)</dt><dd className="text-sm font-medium text-gray-900">{formatCurrency(totalAmount)}</dd></div></dl>
+            
+            <div className="mt-4">
+              <label htmlFor="coupon-code" className="block text-sm font-medium text-gray-700">Código de Descuento</label>
+              <div className="mt-1 flex space-x-2">
+                <input 
+                  type="text" 
+                  id="coupon-code" 
+                  value={couponCode} 
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())} 
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleApplyCoupon(e); } }} 
+                  className="input-style w-full" placeholder="CUPONPOS" disabled={isCartLoading || !!coupon} 
+                />
+                <button type="button" onClick={handleApplyCoupon} disabled={isCartLoading || !!coupon} className="bg-color-secondary text-white px-4 py-2 rounded-md hover:bg-color-accent1 disabled:opacity-50 disabled:cursor-not-allowed">
+                  Aplicar
+                </button>
+              </div>
+            </div>
+
+            <dl className="mt-4 space-y-4 border-t pt-4">
+              <div className="flex items-center justify-between"><dt className="text-sm text-gray-600">Subtotal ({itemCount} items)</dt><dd className="text-sm font-medium text-gray-900">{formatCurrency(subtotal)}</dd></div>
+              {coupon && (
+                <div className="flex items-center justify-between">
+                  <dt className="text-sm text-gray-600 flex items-center">
+                    Descuento ({coupon.code})
+                    <button type="button" onClick={handleRemoveCoupon} className="ml-2 text-red-500 hover:text-red-700" title="Remover cupón" disabled={isCartLoading}><FaTimesCircle /></button>
+                  </dt>
+                  <dd className="text-sm font-medium text-green-600">-{formatCurrency(couponDiscount)}</dd>
+                </div>
+              )}
+              <div className="flex items-center justify-between border-t border-gray-200 pt-4"><dt className="text-base font-medium text-gray-900">Total</dt><dd className="text-base font-bold text-gray-900">{formatCurrency(total)}</dd></div>
+            </dl>
             <div className="mt-6">
                 <button type="submit" disabled={isProcessingSale || itemCount === 0 || isCartLoading} className="w-full flex items-center justify-center rounded-md border border-transparent bg-green-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed">
                     {isProcessingSale ? <FaSpinner className="animate-spin mr-2" /> : <FaFileInvoiceDollar className="ml-2"/>}

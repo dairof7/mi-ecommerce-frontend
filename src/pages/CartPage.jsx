@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCartState, useCartDispatch } from '../contexts/CartContext';
-import cartService from '../services/cartService';
+import cartService from '../services/cartService'; // ya tiene apply/remove coupon
 import { toast } from 'react-toastify';
-import { FaTrash, FaPlus, FaMinus, FaShoppingBag, FaFileInvoiceDollar } from 'react-icons/fa';
+import { FaTrash, FaPlus, FaMinus, FaShoppingBag, FaFileInvoiceDollar, FaTimesCircle } from 'react-icons/fa';
 
 // Helper para formatear moneda
 const formatCurrency = (value) => {
@@ -21,41 +21,25 @@ const Loader = ({ message = "Actualizando carrito..."}) => (
 
 
 function CartPage() {
-  const { items, itemCount, totalAmount, isLoading: isCartLoading, cartId } = useCartState();
-  const cartDispatch = useCartDispatch(); // Renombrado para claridad
+  const { items, itemCount, subtotal, coupon, couponDiscount, total, isLoading: isCartLoading } = useCartState();
+  const cartDispatch = useCartDispatch();
   const navigate = useNavigate();
   const [isProcessingItem, setIsProcessingItem] = useState(null); // Para loaders por item: { type: 'qty'/'remove', itemId: X }
   const [isCreatingQuote, setIsCreatingQuote] = useState(false);
-
-  // Función para recargar el carrito, podría vivir en el contexto también
-  const refreshCart = async () => {
-     cartDispatch({ type: 'REQUEST_START' });
-     try {
-         const cartData = await cartService.getCart();
-         cartDispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: cartData } });
-     } catch (error) {
-         cartDispatch({ type: 'REQUEST_FAILURE', payload: { error: "Error al recargar el carrito" } });
-         toast.error("No se pudo actualizar el carrito.");
-     }
-  };
+  const [couponCode, setCouponCode] = useState('');
 
  const handleUpdateQuantity = async (productId, newQuantity) => {
     if (newQuantity < 1) return;
-    const itemToUpdate = items.find(item => item.product_id === productId); // Asume que item.product es el ID del producto
+    const itemToUpdate = items.find(item => item.product_id === productId);
     if (!itemToUpdate) return;
 
     setIsProcessingItem({ type: 'qty', itemId: itemToUpdate.id });
-    // cartDispatch({ type: 'REQUEST_START' }); // refreshCart ya lo hace
     try {
       const updatedCartData = await cartService.addItemToCart(productId, newQuantity);
-        // 2. Despacha la acción de éxito CON los datos que ya recibiste.
-        // Esto actualiza el estado local INMEDIATAMENTE sin otra llamada a la API.
       cartDispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: updatedCartData } });
       toast.success("Cantidad actualizada.");
-      // await refreshCart(); // Recargar el carrito completo
     } catch (error) {
       toast.error(error.message || "Error al actualizar cantidad - No hay stock suficiente.");
-      // cartDispatch({ type: 'REQUEST_FAILURE', payload: { error: error.message } }); // refreshCart maneja su propio error
     } finally {
       setIsProcessingItem(null);
     }
@@ -63,15 +47,12 @@ function CartPage() {
 
   const handleRemoveItem = async (cartItemId) => {
     setIsProcessingItem({ type: 'remove', itemId: cartItemId });
-    // cartDispatch({ type: 'REQUEST_START' });
     try {
       const updatedCartData = await cartService.removeItemFromCart(cartItemId);
       cartDispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: updatedCartData } });
       toast.info("Producto eliminado del carrito.");
-      // await refreshCart(); // Recargar el carrito completo
     } catch (error) {
       toast.error(error.message || "Error al eliminar producto.");
-      // cartDispatch({ type: 'REQUEST_FAILURE', payload: { error: error.message } });
     } finally {
       setIsProcessingItem(null);
     }
@@ -79,7 +60,6 @@ function CartPage() {
 
 const handleCreateQuote = async () => {
     setIsCreatingQuote(true);
-    // cartDispatch({ type: 'REQUEST_START' }); // El reducer de CLEAR_CART_SUCCESS pone isLoading a false
     try {
       const quoteData = await cartService.createQuoteFromCart();
       cartDispatch({ type: 'CLEAR_CART_SUCCESS' }); 
@@ -88,12 +68,40 @@ const handleCreateQuote = async () => {
     } catch (error) {
       const errorMsg = error.detail || error.error || error.message || "Error al crear la cotización.";
       toast.error(errorMsg);
-      // cartDispatch({ type: 'REQUEST_FAILURE', payload: { error: errorMsg } }); // No es necesario si CLEAR_CART_SUCCESS ya lo hace
     } finally {
       setIsCreatingQuote(false);
     }
   };
 
+  const handleApplyCoupon = async (e) => {
+    e.preventDefault();
+    if (!couponCode.trim()) {
+      toast.warn("Por favor, ingresa un código de cupón.");
+      return;
+    }
+    cartDispatch({ type: 'REQUEST_START' });
+    try {
+      const updatedCart = await cartService.applyCoupon(couponCode);
+      cartDispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: updatedCart } });
+      toast.success(`Cupón "${couponCode}" aplicado.`);
+      setCouponCode(''); // Limpiar input en éxito
+    } catch (error) {
+      const errorMsg = error.error || "El cupón no es válido o no se puede aplicar.";
+      cartDispatch({ type: 'REQUEST_FAILURE', payload: { error: errorMsg } });
+      toast.error(errorMsg);
+    }
+  };
+
+  const handleRemoveCoupon = async () => {
+    cartDispatch({ type: 'REQUEST_START' });
+    try {
+      const updatedCart = await cartService.removeCoupon();
+      cartDispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: updatedCart } });
+      toast.info("Cupón removido.");
+    } catch (error) {
+      toast.error(error.error || "No se pudo remover el cupón.");
+    }
+  };
 
   if (isCartLoading && items.length === 0) {
     return <Loader message="Cargando carrito..." />;
@@ -214,18 +222,45 @@ const handleCreateQuote = async () => {
         </div>
 
         {/* Columna del Resumen del Pedido */}
-        <div className="mt-16 rounded-lg bg-gray-50 px-4 py-6 sm:p-6 lg:mt-0 lg:w-1/3 lg:p-8 h-fit sticky top-24"> {/* sticky top para que se quede fijo */}
+        <div className="mt-16 rounded-lg bg-gray-50 px-4 py-6 sm:p-6 lg:mt-0 lg:w-1/3 lg:p-8 h-fit sticky top-24">
           <h2 className="text-lg font-medium text-color-primary">Resumen del Carrito</h2>
-          <dl className="mt-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <dt className="text-sm text-gray-600">Subtotal ({itemCount} items)</dt>
-              <dd className="text-sm font-medium text-gray-900">{formatCurrency(totalAmount)}</dd>
+
+          <form onSubmit={handleApplyCoupon} className="mt-6">
+            <label htmlFor="coupon-code" className="block text-sm font-medium text-gray-700">Código de Descuento</label>
+            <div className="mt-1 flex space-x-2">
+              <input
+                type="text"
+                id="coupon-code"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                className="input-style w-full"
+                placeholder="CUPON10"
+                disabled={isCartLoading || !!coupon}
+              />
+              <button
+                type="submit"
+                disabled={isCartLoading || !!coupon}
+                className="bg-color-secondary text-white px-4 py-2 rounded-md hover:bg-color-accent1 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Aplicar
+              </button>
             </div>
-            {/* Podrías añadir Descuentos y Envío aquí si los implementas */}
-            {/* <div className="flex items-center justify-between border-t border-gray-200 pt-4">
-              <dt className="text-base font-medium text-gray-900">Total del Pedido</dt>
-              <dd className="text-base font-medium text-gray-900">{formatCurrency(totalAmount)}</dd>
-            </div> */}
+          </form>
+
+          <dl className="mt-6 space-y-4 border-t pt-4">
+            <div className="flex items-center justify-between"><dt className="text-sm text-gray-600">Subtotal ({itemCount} items)</dt><dd className="text-sm font-medium text-gray-900">{formatCurrency(subtotal)}</dd></div>
+            {coupon && (
+              <div className="flex items-center justify-between">
+                <dt className="text-sm text-gray-600 flex items-center">
+                  Descuento ({coupon.code})
+                  <button onClick={handleRemoveCoupon} className="ml-2 text-red-500 hover:text-red-700" title="Remover cupón" disabled={isCartLoading}>
+                    <FaTimesCircle />
+                  </button>
+                </dt>
+                <dd className="text-sm font-medium text-green-600">-{formatCurrency(couponDiscount)}</dd>
+              </div>
+            )}
+            <div className="flex items-center justify-between border-t border-gray-200 pt-4"><dt className="text-base font-medium text-gray-900">Total del Pedido</dt><dd className="text-base font-medium text-gray-900">{formatCurrency(total)}</dd></div>
           </dl>
 <p className="mt-6 text-xs text-center text-gray-500">
               Nota: Los precios no incluyen el costo de envío. Este se coordinará después de generar tu cotización.
@@ -233,10 +268,10 @@ const handleCreateQuote = async () => {
           <div className="mt-4">
             <button
               onClick={handleCreateQuote}
-              disabled={isProcessingItem || itemCount === 0 || isCartLoading}
+              disabled={isCreatingQuote || itemCount === 0 || isCartLoading}
               className="w-full flex items-center justify-center rounded-md border border-transparent bg-color-accent1 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-opacity-85 focus:outline-none focus:ring-2 focus:ring-color-accent2 focus:ring-offset-2 disabled:opacity-60"
             >
-              {isProcessingItem ? 'Procesando...' : 'Generar Cotización'}
+              {isCreatingQuote ? 'Procesando...' : 'Generar Cotización'}
               <FaFileInvoiceDollar className="ml-2"/>
             </button>
           </div>

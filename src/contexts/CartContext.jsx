@@ -7,25 +7,17 @@ import { toast } from 'react-toastify';
 const CartStateContext = createContext(undefined);
 const CartDispatchContext = createContext(undefined);
 
-const initialCartStateDefinition = { // Renombrado para claridad
+const initialCartStateDefinition = {
   items: [],
   itemCount: 0,
-  totalAmount: 0,
+  subtotal: 0,
+  coupon: null,
+  couponDiscount: 0,
+  total: 0,
   cartId: null,
   isLoading: false,
   error: null,
 };
-
-function calculateCartTotals(items) {
-  if (!items || items.length === 0) {
-    return { itemCount: 0, totalAmount: 0 };
-  }
-  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalAmount = items.reduce((sum, item) => sum + parseFloat(item.subtotal || item.product_sale_price * item.quantity), 0);
-  // Asegúrate que 'subtotal' o 'product_sale_price' estén disponibles y sean numéricos.
-  // Tu schema de CartItem tiene 'subtotal' y 'product_sale_price' como string/decimal.
-  return { itemCount, totalAmount };
-}
 
 function cartReducer(state, action) {
   switch (action.type) {
@@ -36,19 +28,21 @@ function cartReducer(state, action) {
     case 'LOAD_CART_SUCCESS':
       const cartData = action.payload.cart;
       if (cartData && cartData.items) { // Si tenemos un carrito con items
-        const totals = calculateCartTotals(cartData.items);
         return {
           ...state,
           items: cartData.items,
-          itemCount: totals.itemCount,
-          totalAmount: totals.totalAmount,
+          itemCount: cartData.items.reduce((sum, item) => sum + item.quantity, 0),
+          subtotal: cartData.subtotal,
+          coupon: cartData.coupon,
+          couponDiscount: cartData.coupon_discount,
+          total: cartData.total,
           cartId: cartData.id,
           isLoading: false,
           error: null,
         };
       } else { // Carrito vacío o nulo del backend
         return { 
-          ...initialCartStateDefinition, // Resetea a la definición inicial
+          ...initialCartStateDefinition,
           isLoading: false, // Asegura que la carga termine
           // cartId: cartData?.id || null // Podrías querer mantener el cartId si existe
         };
@@ -57,25 +51,13 @@ function cartReducer(state, action) {
     case 'UPDATE_ITEM_SUCCESS': // Podría simplemente recargar el carrito o actualizar localmente
     case 'REMOVE_ITEM_SUCCESS': // Podría simplemente recargar el carrito o actualizar localmente
       // Por simplicidad, después de estas acciones, se recargará el carrito desde el backend.
-      // Una optimización sería actualizar el estado local directamente.
-      // Si la API devuelve el carrito actualizado, úsalo:
-      // const updatedTotals = calculateCartTotals(action.payload.cart.items);
-      // return {
-      //   ...state,
-      //   items: action.payload.cart.items,
-      //   itemCount: updatedTotals.itemCount,
-      //   totalAmount: updatedTotals.totalAmount,
-      //   isLoading: false,
-      // };
-      // Por ahora, solo indicamos que la carga terminó, y el useEffect recargará
+      // Las acciones ahora devuelven el carrito actualizado, así que LOAD_CART_SUCCESS se encarga.
       return { ...state, isLoading: false, error: null };
     
     case 'CLEAR_CART_SUCCESS': // Usado después de crear una cotización
       return { 
         ...initialCartStateDefinition, 
         isLoading: false,
-        // cartId podría mantenerse o limpiarse dependiendo de si el backend elimina el Cart
-        // Si el backend no elimina el Cart, es mejor mantener el cartId
         cartId: state.cartId 
       };
     case 'SET_CART_LOADING':
@@ -86,7 +68,7 @@ function cartReducer(state, action) {
 }
 
 export function CartProvider({ children }) {
-  const [state, dispatch] = useReducer(cartReducer, initialCartStateDefinition); // Usar la definición
+  const [state, dispatch] = useReducer(cartReducer, initialCartStateDefinition);
   const { isAuthenticated, user } = useAuthState();
 
   const loadCart = useCallback(async () => {
