@@ -188,12 +188,21 @@ function Navbar() {
             {isAuthenticated ? (
               <>
                 {  user?.is_staff && (
+                  <>
                    <Link to="/manage/quotes" // <-- RUTA ACTUALIZADA      onClick={closeAllMenus} 
                     className={`${commonLinkClasses} ${mobileLinkClasses}`}
                     onClick={closeAllMenus}
                     >
                     Gestionar Pedidos
                     </Link>
+                                        <Link to="/pos" // <-- RUTA ACTUALIZADA      onClick={closeAllMenus} 
+                    className={`${commonLinkClasses} ${mobileLinkClasses}`}
+                    onClick={closeAllMenus}
+                    >
+                    POS
+                    </Link>
+                      </>
+                    
                 )}
                 <Link to="/profile" onClick={closeAllMenus} className={`${commonLinkClasses} ${mobileLinkClasses} flex items-center`}><FaUserCircle className="mr-2 text-gray-500"/>Mi Perfil</Link>
                 <Link to="/quotes" onClick={closeAllMenus} className={`${commonLinkClasses} ${mobileLinkClasses} flex items-center`}><FaFileInvoiceDollar className="mr-2 text-gray-500"/>Mis Cotizaciones</Link>

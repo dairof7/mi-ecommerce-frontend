@@ -276,6 +276,17 @@ function AdminQuotesPage() {
                                                 <h4 className="font-semibold text-gray-700 mb-2">Items del Pedido:</h4>
                                                 <QuoteItemsList items={quote.items} />
                                                 
+                                                {/* Sección para mostrar el cupón aplicado */}
+                                                {quote.coupon && quote.coupon_discount > 0 && (
+                                                    <>
+                                                        <h4 className="font-semibold text-gray-700 mb-2 mt-4">Descuentos:</h4>
+                                                        <div className="text-sm text-gray-600 pl-4 border-l-2 border-green-300">
+                                                            <p><strong>Cupón Aplicado:</strong> {quote.coupon.code}</p>
+                                                            <p><strong>Descuento:</strong> <span className="font-bold text-green-600">-{formatCurrency(quote.coupon_discount)}</span></p>
+                                                        </div>
+                                                    </>
+                                                )}
+
                                                 <h4 className="font-semibold text-gray-700 mb-2 mt-4">Datos del Comprador:</h4>
                                                 <div className="text-sm text-gray-600 pl-4 border-l-2 border-gray-200">
                                                     <p><strong>Dirección:</strong> {quote.user_detail?.address || 'No especificada'}</p>
