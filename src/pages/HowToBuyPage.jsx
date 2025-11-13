@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaShoppingCart, FaWhatsapp, FaCreditCard, FaTruck, FaQuestionCircle, FaFileInvoiceDollar, FaUniversity, FaMobileAlt } from 'react-icons/fa';
+import { FaShoppingCart, FaWhatsapp, FaCreditCard, FaTruck, FaQuestionCircle, FaFileInvoiceDollar, FaUniversity, FaMobileAlt, FaMapMarkerAlt } from 'react-icons/fa';
 // import { FaMoneyBillWave } from 'react-icons/fa'; // Descomenta si necesitas este icono
 
 // Datos de ejemplo para medios de pago (deberías obtenerlos de una config o API si cambian mucho)
@@ -25,6 +25,26 @@ const paymentMethodsData = [
         "Número Celular: <strong>3013367420</strong>"
       ],
       instructions: "Envía a este número Nequi."
+    },
+    {
+      name: "Llaves Bre-B (Nequi - Bancolombia)",
+      icon: FaUniversity,
+      qrImage: null,
+      details: [
+        "Celular: <strong>3013367420</strong>",
+        "Email: <strong>dairof7@gmail.com</strong>"
+      ],
+      instructions: "Usa cualquiera de estas llaves para tu transferencia."
+    },
+    {
+      name: "Tarjetas de Crédito",
+      icon: FaCreditCard,
+      qrImage: null,
+      details: [
+        "Aceptamos Visa y Mastercard.",
+        "Disponible únicamente en nuestra <strong>ubicación física</strong>."
+      ],
+      instructions: "Este método tiene un costo adicional del 3.8%*"
     },
 
     // Ejemplo de Pago Contra Entrega (si aplica)
@@ -166,6 +186,29 @@ function HowToBuyPage() {
             </a>
           </div>
         </Section>
+
+        {/* --- Sección de Ubicación --- */}
+        <div id="ubicacion" className="mt-10 p-6 bg-white rounded-lg shadow-xl border border-gray-200 scroll-mt-20">
+          <h2 className="text-xl sm:text-2xl font-semibold text-color-primary mb-4 flex items-center">
+            <FaMapMarkerAlt className="text-3xl text-color-accent1 mr-3 flex-shrink-0" />
+            O Recoge en Tienda
+          </h2>
+          <p className="text-gray-700 leading-relaxed mb-6">
+            Si prefieres, también puedes realizar tu compra y recogerla directamente en nuestro local físico. ¡Te esperamos para asesorarte personalmente!
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div className="text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start text-gray-700 mb-4">
+                <FaMapMarkerAlt className="text-color-accent1 mr-3 flex-shrink-0" size={24} />
+                <span className="font-semibold text-lg">Calle 8 # 11-13, Santander de Quilichao, Cauca</span>
+              </div>
+              <p className="text-gray-500">Encuéntranos en el corazón de la ciudad, listos para ofrecerte la mejor tecnología y servicio.</p>
+            </div>
+            <div className="w-full h-64 md:h-80 rounded-lg overflow-hidden shadow-md border">
+              <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3984.3143225864405!2d-76.48560862463565!3d3.0098865969660897!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e307fd0c8f2b1e5%3A0xe920b68ba98d8e1d!2sSolidstore!5e0!3m2!1ses-419!2sco!4v1763051167464!5m2!1ses-419!2sco" width="100%" height="100%" style={{ border: 0 }} allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="Ubicación de Solid Store en Google Maps"></iframe>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

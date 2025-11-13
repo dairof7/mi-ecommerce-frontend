@@ -12,6 +12,7 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import CartPage from './pages/CartPage';
 import QuoteHistoryPage from './pages/QuoteHistoryPage';
+import AboutUsPage from './pages/admin/AboutUsPage';
 // import NotFoundPage from './pages/NotFoundPage';
 import HowToBuyPage from './pages/HowToBuyPage';
 import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
@@ -59,6 +60,7 @@ function RouterConfig() {
       <Route path="/products" element={<ProductListPage />} />
       <Route path="/products/:productId" element={<ProductDetailPage />} />
       <Route path="/como-comprar" element={<HowToBuyPage />} />
+      <Route path="/about-us" element={<AboutUsPage />} />
       {/* <Route path="/category/:categoryId" element={<ProductListPage />} /> */}
       {/* <Route path="/subcategory/:subcategoryId" element={<ProductListPage />} /> */}
       <Route element={<AdminProtectedRoute />}>

@@ -90,7 +90,10 @@ function Navbar() {
             <Link to="/products" className={`${desktopLinkClasses} px-3 py-2 rounded-md text-sm font-medium`}>Productos</Link>
 
             <Link to="/como-comprar" className={`${desktopLinkClasses} px-3 py-2 rounded-md text-sm font-medium`}>Cómo Comprar</Link>
-            
+<Link to="/about-us" className="tu-clase-de-estilo-para-enlaces">
+  Quiénes Somos
+</Link>
+
             {isAuthenticated ? (
               <>
               {user?.is_staff && (
