@@ -49,6 +49,10 @@ function POSPage() {
   const [isProcessingSale, setIsProcessingSale] = useState(false);
   const [processingItemId, setProcessingItemId] = useState(null);
 
+  // Estado para manejar los inputs de cantidad de forma diferida
+  const [quantityInputs, setQuantityInputs] = useState({});
+  const quantityInputRefs = useRef({});
+
   // --- Efectos ---
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -77,6 +81,16 @@ function POSPage() {
     }, 400);
     return () => clearTimeout(timer);
   }, [productSearchTerm]);
+
+  useEffect(() => {
+    // Sincroniza el estado de los inputs con el carrito real cuando este cambia
+    const initialQuantities = items.reduce((acc, item) => {
+      acc[item.id] = item.quantity;
+      return acc;
+    }, {});
+    setQuantityInputs(initialQuantities);
+  }, [items]);
+
 
   // --- Manejadores de Eventos ---
   const refreshCart = useCallback(async () => {
@@ -231,6 +245,30 @@ function POSPage() {
       toast.info("Cupón removido.");
     } catch (error) {
       toast.error(error.error || "No se pudo remover el cupón.");
+    }
+  };
+
+  // --- Manejadores para el input de cantidad diferido ---
+  const handleQuantityInputChange = (itemId, value) => {
+    setQuantityInputs(prev => ({ ...prev, [itemId]: value }));
+  };
+
+  const handleQuantityUpdateTrigger = (itemId, productId) => {
+    const newQuantityValue = quantityInputs[itemId];
+    const newQuantity = newQuantityValue === '' ? 1 : parseInt(newQuantityValue, 10);
+
+    if (isNaN(newQuantity) || newQuantity < 1) {
+      // Si el valor no es válido, revierte al valor original del carrito
+      const originalItem = items.find(i => i.id === itemId);
+      setQuantityInputs(prev => ({ ...prev, [itemId]: originalItem.quantity }));
+      toast.warn("La cantidad debe ser un número mayor o igual a 1.");
+      return;
+    }
+
+    // Llama a la función de actualización solo si la cantidad ha cambiado
+    const originalItem = items.find(i => i.id === itemId);
+    if (originalItem && originalItem.quantity !== newQuantity) {
+      handleUpdateQuantity(productId, newQuantity);
     }
   };
 
@@ -392,7 +430,23 @@ function POSPage() {
                                 >
                                     <FaMinus size={10} />
                                 </button>
-                                <span className="w-8 text-center border-l border-r text-sm">{item.quantity}</span>
+                                <input
+                                    type="number"
+                                    value={quantityInputs[item.id] || ''}
+                                    onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
+                                    onBlur={() => handleQuantityUpdateTrigger(item.id, item.product_id)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleQuantityUpdateTrigger(item.id, item.product_id);
+                                        e.target.blur(); // Opcional: quita el foco del input
+                                      }
+                                    }}
+                                    disabled={!!processingItemId}
+                                    className="w-12 text-center border-l border-r text-sm focus:outline-none focus:ring-1 focus:ring-color-secondary disabled:bg-white"
+                                    min="1"
+                                    aria-label={`Cantidad para ${item.product_name}`}
+                                />
                                 <button
                                     onClick={() => handleUpdateQuantity(item.product_id, item.quantity + 1)}
                                     disabled={!!processingItemId}
