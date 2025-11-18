@@ -261,7 +261,10 @@ function AdminQuotesPage() {
                                                 </>
                                             )}
                                             {quote.status === 'paid' && (
-                                                <button onClick={() => handleAction('ship', quote.id)} disabled={processingQuoteId === quote.id} title="Marcar como Enviado" className="btn-action bg-blue-500 hover:bg-blue-600"><FaTruck/></button>
+                                                <>
+                                                    <button onClick={() => handleAction('ship', quote.id)} disabled={processingQuoteId === quote.id} title="Marcar como Enviado" className="btn-action bg-blue-500 hover:bg-blue-600"><FaTruck/></button>
+                                                    <button onClick={() => handleAction('cancel', quote.id)} disabled={processingQuoteId === quote.id} title="Cancelar Cotización" className="btn-action bg-red-500 hover:bg-red-600"><FaTimes/></button>
+                                                </>
                                             )}
                                         </div>
                                     </td>
