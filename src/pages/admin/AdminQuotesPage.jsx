@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import cartService from '../../services/cartService'; // Asume que tiene getQuotes, cancelQuote
-import quoteAdminService from '../../services/quoteAdminService'; // Crea este servicio para acciones de admin
+import quoteAdminService from '../../services/quoteAdminService';
 import { toast } from 'react-toastify';
 import { FaFileInvoiceDollar, FaCheck, FaTimes, FaTruck, FaRedo, FaSearch } from 'react-icons/fa';
 import { useSearchParams } from 'react-router-dom';
@@ -157,7 +157,7 @@ function AdminQuotesPage() {
                 updatedQuote = await quoteAdminService.markAsShipped(quoteId);
                 toast.success(`Pedido #${quoteId} marcado como enviado.`);
             }
-            const updatedQuoteObject = updatedQuote.quote;
+            const updatedQuoteObject = updatedQuote.data.quote;
 
             if (updatedQuoteObject) {
                 // Actualizar el estado local con el objeto completo devuelto por la API
@@ -175,6 +175,22 @@ function AdminQuotesPage() {
 
         } catch (error) {
             toast.error(error.error || `Error al procesar la acción para la cotización #${quoteId}.`);
+        } finally {
+            setProcessingQuoteId(null);
+        }
+    };
+
+    const handleViewReceipt = async (quoteId) => {
+        setProcessingQuoteId(quoteId);
+        try {
+            // La respuesta de axios contiene el blob en la propiedad 'data'
+            const response = await quoteAdminService.getQuoteReceipt(quoteId);
+            const pdfUrl = URL.createObjectURL(response.data);
+            window.open(pdfUrl, '_blank'); // Abre el PDF en una nueva pestaña
+            URL.revokeObjectURL(pdfUrl); // Libera memoria
+        } catch (error) {
+            const errorMsg = error.response?.data?.detail || error.message || `Error al generar el recibo para el pedido #${quoteId}.`;
+            toast.error(errorMsg);
         } finally {
             setProcessingQuoteId(null);
         }
@@ -265,6 +281,9 @@ function AdminQuotesPage() {
                                                     <button onClick={() => handleAction('ship', quote.id)} disabled={processingQuoteId === quote.id} title="Marcar como Enviado" className="btn-action bg-blue-500 hover:bg-blue-600"><FaTruck/></button>
                                                     <button onClick={() => handleAction('cancel', quote.id)} disabled={processingQuoteId === quote.id} title="Cancelar Cotización" className="btn-action bg-red-500 hover:bg-red-600"><FaTimes/></button>
                                                 </>
+                                            )}
+                                            {['pending', 'paid', 'shipped'].includes(quote.status) && (
+                                                <button onClick={() => handleViewReceipt(quote.id)} disabled={processingQuoteId === quote.id} title="Ver Recibo" className="btn-action bg-gray-500 hover:bg-gray-600"><FaFileInvoiceDollar/></button>
                                             )}
                                         </div>
                                     </td>
