@@ -177,6 +177,10 @@ function ProductDetailPage() {
               src={mainImageUrl} 
               alt={product.images && product.images.length > 0 ? product.images[currentImageIndex]?.alt_text || product.name : product.name} 
               className="w-full h-full object-contain"
+              onError={(e) => {
+    e.target.onerror = null; // Evita bucles infinitos si logo.png también falla
+    e.target.src = '/logo.png';
+  }}
             />
             {thumbnailImages.length > 1 && (
               <>

@@ -52,6 +52,10 @@ const CategoryCarousel = ({ categories }) => {
                   src={category.image || '/logo.png'}
                   alt={category.name}
                   className="w-full h-full object-cover group-hover/item:scale-105 transition-transform duration-300"
+                  onError={(e) => {
+    e.target.onerror = null; // Evita bucles infinitos si logo.png también falla
+    e.target.src = '/logo.png';
+  }}
                 />
               </div>
               <h3 className="px-1 py-2 font-semibold text-color-secondary group-hover/item:text-color-accent1 transition-colors text-xs sm:text-sm truncate" title={category.name}>

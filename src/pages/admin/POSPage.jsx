@@ -386,7 +386,12 @@ function POSPage() {
                         className="px-4 py-3 cursor-pointer hover:bg-color-accent1 hover:text-white w-full text-left flex items-center justify-between group disabled:bg-gray-100 disabled:cursor-not-allowed"
                       >
                         <div className="flex items-center">
-                          <img src={product.images?.[0]?.image || '/logo.png'} alt={product.name} className="w-10 h-10 object-cover rounded mr-3" />
+                          <img src={product.images?.[0]?.image || '/logo.png'} alt={product.name} className="w-10 h-10 object-cover rounded mr-3" 
+                          onError={(e) => {
+                            e.target.onerror = null; // Evita bucles infinitos si logo.png también falla
+                            e.target.src = '/logo.png';
+                          }}
+                          />
                           <div>
                             <p className="font-semibold text-sm">{product.name}</p>
                             <p className={`text-xs ${product.stock > 0 ? 'text-gray-500 group-hover:text-white' : 'text-red-500 font-semibold'}`}>{product.stock > 0 ? `Stock: ${product.stock}` : 'Agotado'}</p>

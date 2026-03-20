@@ -138,6 +138,10 @@ const handleCreateQuote = async () => {
                     src={item.product_detail?.images?.[0]?.image || item.product_image_url || '/logo.png'} // Ajusta 'product_image' o 'product_detail'
                     alt={item.product_name}
                     className="h-24 w-24 rounded-md object-cover object-center sm:h-32 sm:w-32"
+                    onError={(e) => {
+    e.target.onerror = null; // Evita bucles infinitos si logo.png también falla
+    e.target.src = '/logo.png';
+  }}
                   />
                 </div>
 

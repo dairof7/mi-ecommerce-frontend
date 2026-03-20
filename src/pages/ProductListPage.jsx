@@ -91,7 +91,7 @@ function ProductListPage() {
         setProducts(data.results || []);
         setPagination({
           count: data.count || 0,
-          totalPages: Math.ceil((data.count || 0) / 20),
+          totalPages: Math.ceil((data.count || 0) / 32),
           currentPage: parseInt(searchParams.get('page')) || 1,
         });
       } catch (err) {

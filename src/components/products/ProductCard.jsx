@@ -102,6 +102,10 @@ const imageUrl = product.images && product.images.length > 0
         src={imageUrl} 
         alt={product.name} 
         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+        onError={(e) => {
+    e.target.onerror = null; // Evita bucles infinitos si logo.png también falla
+    e.target.src = '/logo.png';
+  }}
       />
     </Link>
     <div className="p-1 sm:p-4 flex flex-col flex-grow"> {/* Padding más pequeño en mobile */}
