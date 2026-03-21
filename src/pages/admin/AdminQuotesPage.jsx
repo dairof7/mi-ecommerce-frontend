@@ -146,18 +146,21 @@ function AdminQuotesPage() {
     const handleAction = async (actionType, quoteId) => {
         setProcessingQuoteId(quoteId);
         try {
-            let updatedQuote;
+            let updatedQuoteObject;
+            
             if (actionType === 'finalize') {
-                updatedQuote = await quoteAdminService.finalizeSale(quoteId);
+                const response = await quoteAdminService.finalizeSale(quoteId);
+                updatedQuoteObject = response.data.quote;
                 toast.success(`Venta #${quoteId} finalizada.`);
             } else if (actionType === 'cancel') {
-                updatedQuote = await cartService.cancelQuote(quoteId); // Reutilizamos el servicio
+                const responseData = await cartService.cancelQuote(quoteId); // Reutilizamos el servicio (devuelve data directo)
+                updatedQuoteObject = responseData.quote;
                 toast.info(`Cotización #${quoteId} cancelada.`);
             } else if (actionType === 'ship') {
-                updatedQuote = await quoteAdminService.markAsShipped(quoteId);
+                const response = await quoteAdminService.markAsShipped(quoteId);
+                updatedQuoteObject = response.data.quote;
                 toast.success(`Pedido #${quoteId} marcado como enviado.`);
             }
-            const updatedQuoteObject = updatedQuote.data.quote;
 
             if (updatedQuoteObject) {
                 // Actualizar el estado local con el objeto completo devuelto por la API
@@ -168,7 +171,6 @@ function AdminQuotesPage() {
                 );
             } else {
                 // Fallback si la API no devuelve el objeto 'quote' (aunque debería)
-                // En este caso, podríamos necesitar recargar la lista completa
                 console.warn("La acción fue exitosa pero la API no devolvió el objeto de la cotización actualizado. Se recargará la lista.");
                 fetchQuotes(); // Recargar todo
             }
