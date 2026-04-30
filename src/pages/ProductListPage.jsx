@@ -87,11 +87,22 @@ function ProductListPage() {
       const apiParams = Object.fromEntries(searchParams.entries());
 
       try {
-        const data = await productService.getProducts(apiParams);
-        setProducts(data.results || []);
+        let data;
+        const hasFilters = initialFilters.category || initialFilters.subcategory || initialFilters.search || (initialFilters.tags_name && initialFilters.tags_name.length > 0);
+        
+        if (!hasFilters) {
+          data = await productService.getFeaturedProducts({ page: apiParams.page || 1 });
+        } else {
+          data = await productService.getProducts(apiParams);
+        }
+
+        const results = data.results || (Array.isArray(data) ? data : []);
+        const count = data.count !== undefined ? data.count : results.length;
+
+        setProducts(results);
         setPagination({
-          count: data.count || 0,
-          totalPages: Math.ceil((data.count || 0) / 32),
+          count: count,
+          totalPages: Math.ceil(count / 32),
           currentPage: parseInt(searchParams.get('page')) || 1,
         });
       } catch (err) {
@@ -101,7 +112,7 @@ function ProductListPage() {
       }
     };
     fetchProducts();
-  }, [searchParams]);
+  }, [searchParams, initialFilters]);
 
   // 2. Efecto para cargar los datos de los filtros (categorías, subcategorías, tags)
   //    cuando los filtros principales cambian.
@@ -182,12 +193,61 @@ function ProductListPage() {
   return (
     <div className="container mx-auto px-2 sm:px-4">
       <h1 className="text-2xl sm:text-3xl font-bold text-color-primary my-4 sm:my-6 text-center md:text-left">
-        {initialFilters.category && categories.find(c => c.id.toString() === initialFilters.category) && ` ${categories.find(c => c.id.toString() === initialFilters.category)?.name}`}
-        {initialFilters.subcategory && subcategories.find(s => s.id.toString() === initialFilters.subcategory) && ` > ${subcategories.find(s => s.id.toString() === initialFilters.subcategory)?.name}`}
+        {!initialFilters.category && !initialFilters.subcategory && !initialFilters.search && (!initialFilters.tags_name || initialFilters.tags_name.length === 0) ? (
+          'Productos Destacados'
+        ) : (
+          <>
+            {initialFilters.category && categories.find(c => c.id.toString() === initialFilters.category) ? categories.find(c => c.id.toString() === initialFilters.category)?.name : 'Productos'}
+            {initialFilters.subcategory && subcategories.find(s => s.id.toString() === initialFilters.subcategory) && ` > ${subcategories.find(s => s.id.toString() === initialFilters.subcategory)?.name}`}
+          </>
+        )}
       </h1>
 
       {/* Renderiza el banner si existe */}
       {topBanner.length > 0 && <BannerCarousel banners={topBanner} />}
+
+      {/* Burbujas de Categorías y Subcategorías */}
+      <div className="mb-6">
+        {!initialFilters.category ? (
+          <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => handleFiltersApply({ ...initialFilters, category: cat.id.toString(), subcategory: '' })}
+                className="px-4 py-2 rounded-full border border-gray-300 bg-white hover:bg-color-secondary hover:text-white transition-colors text-sm font-medium text-gray-700 shadow-sm"
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+            <button
+              onClick={() => handleFiltersApply({ ...initialFilters, category: '', subcategory: '' })}
+              className="px-4 py-2 rounded-full border border-color-secondary bg-color-secondary text-white hover:bg-opacity-90 transition-colors text-sm font-medium flex items-center shadow-sm"
+            >
+              <FaTimes className="mr-2" /> {categories.find(c => c.id.toString() === initialFilters.category)?.name || 'Categoría'}
+            </button>
+            
+            {subcategories.map(sub => {
+              const isSelected = initialFilters.subcategory === sub.id.toString();
+              return (
+                <button
+                  key={sub.id}
+                  onClick={() => handleFiltersApply({ ...initialFilters, subcategory: isSelected ? '' : sub.id.toString() })}
+                  className={`px-4 py-2 rounded-full border transition-colors text-sm font-medium shadow-sm ${
+                    isSelected 
+                      ? 'border-color-secondary bg-indigo-50 text-color-secondary font-bold'
+                      : 'border-gray-300 bg-white hover:bg-gray-50 text-gray-700'
+                  }`}
+                >
+                  {sub.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       <div className="md:hidden mb-4">
         <button onClick={() => setShowMobileFilters(true)} className="flex items-center bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 active:bg-gray-100 shadow-sm w-full justify-center">
