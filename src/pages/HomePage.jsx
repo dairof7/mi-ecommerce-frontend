@@ -123,15 +123,27 @@ function HomePage() {
           siteSettingsService.getBanners({ placement: 'home_main', limit: 3 }).catch(e => { console.error("Banner fetch failed:", e); return []; }),
           productService.getCategories({ limit: 12 }).catch(e => { console.error("Category fetch failed:", e); return null; }),
           productService.getFeaturedProducts({ limit: 5 }).catch(e => { console.error("Featured products fetch failed:", e); return null; }),
-          productService.getBestsellerProducts({ limit: 5 }).catch(e => { console.error("Bestseller products fetch failed:", e); return null; }),
-          productService.getNewProducts({ limit: 5 }).catch(e => { console.error("New arrivals products fetch failed:", e); return null; })
+          productService.getBestsellerProducts({ limit: 10 }).catch(e => { console.error("Bestseller products fetch failed:", e); return null; }),
+          productService.getNewProducts({ limit: 20 }).catch(e => { console.error("New arrivals products fetch failed:", e); return null; })
         ]);
         
         setMainBanners(bannersData || []);
         setCategories(categoriesData?.results || categoriesData || []);
         setFeaturedProducts(featuredData?.results || featuredData || []);
-        setBestsellerProducts(bestsellersData?.results || bestsellersData || []);
-        setNewProducts(newProductsData?.results || newProductsData || []);
+        
+        // Rotar los 10 más vendidos: elegir 5 al azar cada vez que carga la página
+        let fetchedBestsellers = bestsellersData?.results || bestsellersData || [];
+        if (fetchedBestsellers.length > 5) {
+            fetchedBestsellers = [...fetchedBestsellers].sort(() => 0.5 - Math.random()).slice(0, 5);
+        }
+        setBestsellerProducts(fetchedBestsellers);
+        
+        // Rotar los 20 más nuevos: elegir 5 al azar cada vez que carga la página
+        let fetchedNewProducts = newProductsData?.results || newProductsData || [];
+        if (fetchedNewProducts.length > 5) {
+            fetchedNewProducts = [...fetchedNewProducts].sort(() => 0.5 - Math.random()).slice(0, 5);
+        }
+        setNewProducts(fetchedNewProducts);
 
       } catch (err) {
         const errorMsg = err.message || "Error al cargar los datos de la página principal.";
