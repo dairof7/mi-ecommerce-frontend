@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'; //
 import productService from '../services/productService';
 import cartService from '../services/cartService'; // Importar cartService
 import { toast } from 'react-toastify';
-import { FaChevronLeft, FaChevronRight, FaShoppingCart, FaTags, FaInfoCircle, FaStore } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaShoppingCart, FaTags, FaInfoCircle, FaStore, FaShareAlt } from 'react-icons/fa';
 import { useAuthState } from '../contexts/AuthContext';
 import { useCartDispatch } from '../contexts/CartContext'; // Importar useCartDispatch
 
@@ -140,6 +140,27 @@ function ProductDetailPage() {
     }
   };
 
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: product.name,
+          text: `Mira este producto: ${product.name}`,
+          url: window.location.href,
+        });
+      } catch (error) {
+        console.error('Error compartiendo:', error);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success("Enlace copiado al portapapeles");
+      } catch (err) {
+        toast.error("No se pudo copiar el enlace");
+      }
+    }
+  };
+
   const nextImage = () => {
     if (product && product.images && product.images.length > 0) {
       setCurrentImageIndex((prevIndex) => (prevIndex + 1) % product.images.length);
@@ -212,7 +233,17 @@ function ProductDetailPage() {
         {/* Columna de Información y Acciones */}
 <div className="product-info flex flex-col justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-color-primary mb-2 leading-tight">{product.name}</h1>
+          <div className="flex justify-between items-start mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-color-primary leading-tight pr-4">{product.name}</h1>
+            <button 
+              onClick={handleShare}
+              className="p-2 text-gray-500 hover:text-color-secondary hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
+              aria-label="Compartir producto"
+              title="Compartir"
+            >
+              <FaShareAlt size={20} />
+            </button>
+          </div>
             
             <div className="mb-2 text-xs sm:text-sm">
               {product.category && (
