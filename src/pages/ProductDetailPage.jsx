@@ -259,6 +259,14 @@ function ProductDetailPage() {
               )}
             </div>
 
+            {product.brand_name && (
+              <div className="mb-3">
+                <span className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded border border-gray-200 font-medium">
+                  Marca: {product.brand_name}
+                </span>
+              </div>
+            )}
+
             <div className="mb-2">
               {product.has_discount ? (
                 <div className="flex items-baseline space-x-2">
