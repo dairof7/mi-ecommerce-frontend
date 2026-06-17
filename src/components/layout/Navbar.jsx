@@ -109,6 +109,12 @@ function Navbar() {
                     >
                     POS
                     </Link>
+
+                    <Link to="/manage/quick-quote" 
+                    className={`${desktopLinkClasses} px-3 py-2 rounded-md text-sm font-medium`}
+                    >
+                    Cotización Rápida
+                    </Link>
                 </>
               )}
                 {/* Contenedor del Carrito con position: relative */}
@@ -203,6 +209,12 @@ function Navbar() {
                     onClick={closeAllMenus}
                     >
                     POS
+                    </Link>
+                    <Link to="/manage/quick-quote"
+                    className={`${commonLinkClasses} ${mobileLinkClasses}`}
+                    onClick={closeAllMenus}
+                    >
+                    Cotización Rápida
                     </Link>
                       </>
                     

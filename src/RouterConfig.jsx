@@ -18,6 +18,7 @@ import HowToBuyPage from './pages/HowToBuyPage';
 import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
 import AdminQuotesPage from './pages/admin/AdminQuotesPage'; // Página que 
 import POSPage from './pages/admin/POSPage'; // Página que 
+import QuickQuotePage from './pages/admin/QuickQuotePage';
 // Componente para Rutas Protegidas
 const ProtectedRoute = () => {
   const { isAuthenticated, isLoading } = useAuthState();
@@ -66,6 +67,7 @@ function RouterConfig() {
       <Route element={<AdminProtectedRoute />}>
           <Route path="/manage/quotes" element={<AdminQuotesPage />} />
           <Route path="/pos" element={<POSPage />} />
+          <Route path="/manage/quick-quote" element={<QuickQuotePage />} />
           {/* Añade más rutas de admin aquí */}
       </Route>
       {/* Rutas que no deberían ser accesibles si ya estás logueado */}
