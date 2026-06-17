@@ -116,6 +116,7 @@ const QuickQuotePage = () => {
             return {
                 ...item,
                 calculatedCostCop: costCop,
+                unitTotalCost: totalUnitCost,
                 salePrice: salePrice,
                 profit: profit,
                 totalSale: salePrice * units,
@@ -250,23 +251,24 @@ const QuickQuotePage = () => {
                     <table className="w-full text-sm text-left text-gray-500 border border-gray-200 rounded-lg">
                         <thead className="text-xs text-gray-700 uppercase bg-gray-100">
                             <tr>
-                                <th className="px-4 py-3 min-w-[200px]">Artículo</th>
-                                <th className="px-4 py-3 w-20">Unid.</th>
-                                <th className="px-4 py-3 w-28">Costo USD</th>
-                                <th className="px-4 py-3 w-32">Costo COP</th>
-                                <th className="px-4 py-3 w-24">Imp. (%)</th>
-                                <th className="px-4 py-3 w-28">Envío COP</th>
-                                <th className="px-4 py-3 w-24">% Gan.</th>
-                                <th className="px-4 py-3 whitespace-nowrap bg-blue-50">Precio Unit. (COP)</th>
-                                <th className="px-4 py-3 whitespace-nowrap bg-green-50">Ganancia Art. (COP)</th>
-                                <th className="px-4 py-3 whitespace-nowrap bg-blue-50 font-bold">Total Venta</th>
-                                <th className="px-4 py-3 text-center">Acción</th>
+                                <th className="px-2 py-3 w-1/5 min-w-[150px]">Artículo</th>
+                                <th className="px-2 py-3 w-14 text-center">Unid.</th>
+                                <th className="px-2 py-3 w-24">Costo USD</th>
+                                <th className="px-2 py-3 w-32" title="Costo antes de impuestos y envío">Costo Base COP</th>
+                                <th className="px-2 py-3 w-14 text-center" title="Sobre Costo Base">Imp%</th>
+                                <th className="px-2 py-3 w-28">Envío COP</th>
+                                <th className="px-2 py-3 w-32 bg-gray-200">Total COP</th>
+                                <th className="px-2 py-3 w-14 text-center">%Gan</th>
+                                <th className="px-2 py-3 w-32 bg-blue-50">Precio Unit.</th>
+                                <th className="px-2 py-3 w-32 bg-green-50">Ganancia</th>
+                                <th className="px-2 py-3 w-32 bg-blue-50 font-bold">Venta Total</th>
+                                <th className="px-2 py-3 w-10 text-center"></th>
                             </tr>
                         </thead>
                         <tbody>
                             {calculatedItems.map((item, index) => (
                                 <tr key={item.id} className="border-b hover:bg-gray-50">
-                                    <td className="px-4 py-2">
+                                    <td className="px-2 py-2">
                                         <input 
                                             type="text" 
                                             placeholder="Descripción" 
@@ -275,73 +277,76 @@ const QuickQuotePage = () => {
                                             className="w-full p-1 border border-gray-300 rounded text-sm focus:ring-color-primary"
                                         />
                                     </td>
-                                    <td className="px-4 py-2">
+                                    <td className="px-2 py-2">
                                         <input 
                                             type="number" 
                                             min="1"
                                             value={item.units}
                                             onChange={(e) => handleChange(item.id, 'units', e.target.value)}
-                                            className="w-full p-1 border border-gray-300 rounded text-sm focus:ring-color-primary"
+                                            className="w-full p-1 border border-gray-300 rounded text-sm focus:ring-color-primary text-center px-1"
                                         />
                                     </td>
-                                    <td className="px-4 py-2">
+                                    <td className="px-2 py-2">
                                         <input 
                                             type="number" 
                                             placeholder="USD" 
                                             value={item.costUsd}
                                             onChange={(e) => handleChange(item.id, 'costUsd', e.target.value)}
-                                            className="w-full p-1 border border-gray-300 rounded text-sm focus:ring-color-primary"
+                                            className="w-full p-1 border border-gray-300 rounded text-sm focus:ring-color-primary px-1"
                                         />
                                     </td>
-                                    <td className="px-4 py-2">
+                                    <td className="px-2 py-2">
                                         <input 
                                             type="number" 
                                             placeholder={item.calculatedCostCop ? Math.round(item.calculatedCostCop) : "COP"} 
                                             value={item.costCop}
                                             onChange={(e) => handleChange(item.id, 'costCop', e.target.value)}
-                                            className="w-full p-1 border border-gray-300 rounded text-sm focus:ring-color-primary"
+                                            className="w-full p-1 border border-gray-300 rounded text-sm focus:ring-color-primary px-1"
                                         />
                                     </td>
-                                    <td className="px-4 py-2">
+                                    <td className="px-2 py-2">
                                         <input 
                                             type="number" 
                                             placeholder="0"
                                             value={item.taxPercent}
                                             onChange={(e) => handleChange(item.id, 'taxPercent', e.target.value)}
-                                            className="w-full p-1 border border-gray-300 rounded text-sm focus:ring-color-primary"
+                                            className="w-full p-1 border border-gray-300 rounded text-sm focus:ring-color-primary text-center px-1"
                                         />
                                     </td>
-                                    <td className="px-4 py-2">
+                                    <td className="px-2 py-2">
                                         <input 
                                             type="number" 
                                             placeholder="0"
                                             value={item.shippingCost}
                                             onChange={(e) => handleChange(item.id, 'shippingCost', e.target.value)}
-                                            className="w-full p-1 border border-gray-300 rounded text-sm focus:ring-color-primary"
+                                            className="w-full p-1 border border-gray-300 rounded text-sm focus:ring-color-primary px-1"
                                         />
                                     </td>
-                                    <td className="px-4 py-2">
+                                    <td className="px-2 py-2 bg-gray-100 font-medium text-gray-800 text-xs sm:text-sm">
+                                        {formatCurrency(item.unitTotalCost)}
+                                    </td>
+                                    <td className="px-2 py-2">
                                         <input 
                                             type="number" 
                                             value={item.margin}
                                             onChange={(e) => handleChange(item.id, 'margin', e.target.value)}
-                                            className="w-full p-1 border border-gray-300 rounded text-sm focus:ring-color-primary"
+                                            className="w-full p-1 border border-gray-300 rounded text-sm focus:ring-color-primary text-center px-1"
                                         />
                                     </td>
-                                    <td className="px-4 py-2 bg-blue-50 font-medium text-gray-900">
+                                    <td className="px-2 py-2 bg-blue-50 font-medium text-gray-900 text-xs sm:text-sm">
                                         {formatCurrency(item.salePrice)}
                                     </td>
-                                    <td className="px-4 py-2 bg-green-50 text-green-700">
+                                    <td className="px-2 py-2 bg-green-50 text-green-700 text-xs sm:text-sm">
                                         {formatCurrency(item.totalProfit)}
                                         <div className="text-[10px] text-green-600 leading-none">Unid: {formatCurrency(item.profit)}</div>
                                     </td>
-                                    <td className="px-4 py-2 bg-blue-50 font-bold text-gray-900">
+                                    <td className="px-2 py-2 bg-blue-50 font-bold text-gray-900 text-xs sm:text-sm">
                                         {formatCurrency(item.totalSale)}
                                     </td>
-                                    <td className="px-4 py-2 text-center">
+                                    <td className="px-2 py-2 text-center">
                                         <button 
                                             onClick={() => handleRemoveItem(item.id)}
-                                            className="text-red-500 hover:text-red-700 p-1"
+                                            className="text-red-500 hover:text-red-700 p-1 mx-auto block"
                                             title="Eliminar fila"
                                             disabled={items.length === 1}
                                         >
