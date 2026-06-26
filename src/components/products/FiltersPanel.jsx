@@ -8,7 +8,8 @@ const FiltersPanel = React.memo(({
   isLoadingFilters,
   categories,
   subcategories,
-  relevantTags
+  relevantTags,
+  relevantBrands
 }) => {
   
   // Estados locales para los campos del formulario
@@ -16,7 +17,11 @@ const FiltersPanel = React.memo(({
   const [selectedCategory, setSelectedCategory] = useState(initialFilters.category || '');
   const [selectedSubcategory, setSelectedSubcategory] = useState(initialFilters.subcategory || '');
   const [selectedTags, setSelectedTags] = useState(initialFilters.tags_name || []);
+  const [selectedBrands, setSelectedBrands] = useState(initialFilters.brand || []);
   const [sortOrder, setSortOrder] = useState(initialFilters.ordering || '');
+  
+  const [showAllBrands, setShowAllBrands] = useState(false);
+  const [brandSearchTerm, setBrandSearchTerm] = useState('');
 
   // Sincronizar estado local si los filtros de la URL cambian (ej. botones de navegador)
   useEffect(() => {
@@ -24,6 +29,7 @@ const FiltersPanel = React.memo(({
     setSelectedCategory(initialFilters.category || '');
     setSelectedSubcategory(initialFilters.subcategory || '');
     setSelectedTags(initialFilters.tags_name || []);
+    setSelectedBrands(initialFilters.brand || []);
     setSortOrder(initialFilters.ordering || '');
   }, [initialFilters]);
 
@@ -34,6 +40,7 @@ const FiltersPanel = React.memo(({
       category: selectedCategory,
       subcategory: selectedSubcategory,
       tags_name: selectedTags,
+      brand: selectedBrands,
       ordering: sortOrder,
     });
   };
@@ -48,6 +55,23 @@ const FiltersPanel = React.memo(({
             category: selectedCategory,
             subcategory: selectedSubcategory,
             tags_name: newTags,
+            brand: selectedBrands,
+            ordering: sortOrder,
+        });
+    }
+  };
+
+  const handleBrandChange = (brandId, isChecked) => {
+    const brandIdStr = brandId.toString();
+    const newBrands = isChecked ? [...selectedBrands, brandIdStr] : selectedBrands.filter(b => b !== brandIdStr);
+    setSelectedBrands(newBrands);
+    if (window.innerWidth >= 768) { 
+        onFiltersApply({
+            search: searchTerm.trim(),
+            category: selectedCategory,
+            subcategory: selectedSubcategory,
+            tags_name: selectedTags,
+            brand: newBrands,
             ordering: sortOrder,
         });
     }
@@ -60,6 +84,7 @@ const FiltersPanel = React.memo(({
         category: name === 'category' ? value : selectedCategory,
         subcategory: name === 'subcategory' ? value : selectedSubcategory,
         tags_name: selectedTags,
+        brand: selectedBrands,
         ordering: name === 'ordering' ? value : sortOrder,
     };
     if (name === 'category') {
@@ -133,6 +158,65 @@ const FiltersPanel = React.memo(({
                     <option value="-created_at">Más Recientes</option>
                 </select>
             </div>
+
+      {/* Marcas */}
+{relevantBrands && relevantBrands.length > 0 && (
+    <div className="pt-2">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Marcas</label>
+        
+        {showAllBrands && (
+            <div className="mb-2">
+                <input 
+                    type="text" 
+                    placeholder="Buscar marca..." 
+                    value={brandSearchTerm}
+                    onChange={(e) => setBrandSearchTerm(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded text-sm focus:ring-color-primary"
+                />
+            </div>
+        )}
+
+        <div className="max-h-48 overflow-y-auto space-y-2 pr-1 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
+        {relevantBrands
+            .filter(brand => !showAllBrands || brand.name.toLowerCase().includes(brandSearchTerm.toLowerCase()))
+            .slice(0, showAllBrands ? undefined : 5)
+            .map(brand => {
+                const brandIdStr = brand.id.toString();
+                return (
+            <label key={brand.id} className={`flex items-center justify-between w-full p-2 border rounded-md cursor-pointer transition-colors text-sm ${selectedBrands.includes(brandIdStr) ? 'bg-color-accent2 text-white border-color-accent2' : 'bg-gray-50 hover:bg-gray-100 border-gray-300'}`}>
+            <span className="flex items-center">
+                <input 
+                    type="checkbox" 
+                    value={brand.id} 
+                    checked={selectedBrands.includes(brandIdStr)} 
+                    onChange={(e) => handleBrandChange(brand.id, e.target.checked)} 
+                    className="form-checkbox h-4 w-4 text-color-secondary focus:ring-color-accent1 rounded mr-2" 
+                />
+                <span className="truncate max-w-[120px]" title={brand.name}>{brand.name}</span>
+            </span>
+            {brand.product_count !== undefined && (
+                <span className={`ml-1 text-xs px-1.5 py-0.5 rounded-full flex-shrink-0 ${selectedBrands.includes(brandIdStr) ? 'bg-white text-color-accent2' : 'bg-gray-200 text-gray-600'}`}>
+                    {brand.product_count}
+                </span>
+            )}
+            </label>
+        )})}
+        </div>
+        
+        {relevantBrands.length > 5 && (
+            <button 
+                type="button" 
+                onClick={() => {
+                    setShowAllBrands(!showAllBrands);
+                    if (showAllBrands) setBrandSearchTerm(''); // Reset search on close
+                }}
+                className="mt-2 text-sm text-color-secondary font-medium hover:underline focus:outline-none"
+            >
+                {showAllBrands ? 'Mostrar menos' : `Ver más marcas (${relevantBrands.length - 5})`}
+            </button>
+        )}
+    </div>
+)}
 
       {/* Tags */}
 {relevantTags.length > 0 && (

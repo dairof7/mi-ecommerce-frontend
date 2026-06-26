@@ -50,6 +50,7 @@ function ProductListPage() {
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [relevantTags, setRelevantTags] = useState([]);
+  const [relevantBrands, setRelevantBrands] = useState([]);
   const [topBanner, setTopBanner] = useState([]);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 0 });
   
@@ -73,6 +74,7 @@ function ProductListPage() {
       search: params.get('search') || '',
       ordering: params.get('ordering') || '',
       tags_name: params.getAll('tags_name') || [],
+      brand: params.getAll('brand') || [],
     };
   }, [searchParams, categoryIdFromRoute]);
 
@@ -88,7 +90,7 @@ function ProductListPage() {
 
       try {
         let data;
-        const hasFilters = initialFilters.category || initialFilters.subcategory || initialFilters.search || (initialFilters.tags_name && initialFilters.tags_name.length > 0);
+        const hasFilters = initialFilters.category || initialFilters.subcategory || initialFilters.search || (initialFilters.tags_name && initialFilters.tags_name.length > 0) || (initialFilters.brand && initialFilters.brand.length > 0);
         
         if (!hasFilters) {
           data = await productService.getFeaturedProducts({ page: apiParams.page || 1 });
@@ -142,10 +144,14 @@ function ProductListPage() {
     Object.keys(filtersForTags).forEach(key => !filtersForTags[key] && delete filtersForTags[key]);
 
     setIsLoadingFilters(true); // Inicia la carga de filtros
-    productService.getRelevantTags(filtersForTags)
-      .then(data => setRelevantTags(data || []))
-      .catch(() => setRelevantTags([]))
-      .finally(() => setIsLoadingFilters(false)); // Termina la carga de filtros
+    Promise.all([
+        productService.getRelevantTags(filtersForTags)
+            .then(data => setRelevantTags(data || []))
+            .catch(() => setRelevantTags([])),
+        productService.getRelevantBrands(filtersForTags)
+            .then(data => setRelevantBrands(data || []))
+            .catch(() => setRelevantBrands([]))
+    ]).finally(() => setIsLoadingFilters(false)); // Termina la carga de filtros
 
   }, [initialFilters.category, initialFilters.subcategory, initialFilters.search]); // Dependencias estables
 
@@ -175,6 +181,9 @@ function ProductListPage() {
     if (allFilters.ordering) newSearchParams.set('ordering', allFilters.ordering);
     if (allFilters.tags_name && allFilters.tags_name.length > 0) {
       allFilters.tags_name.forEach(tag => newSearchParams.append('tags_name', tag));
+    }
+    if (allFilters.brand && allFilters.brand.length > 0) {
+      allFilters.brand.forEach(b => newSearchParams.append('brand', b));
     }
     
     setSearchParams(newSearchParams);
@@ -271,6 +280,7 @@ function ProductListPage() {
                 categories={categories}
                 subcategories={subcategories}
                 relevantTags={relevantTags}
+                relevantBrands={relevantBrands}
             />
         </aside>
 

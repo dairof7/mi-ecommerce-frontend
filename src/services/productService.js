@@ -69,6 +69,16 @@ const getRelevantTags = async (productFilters = {}) => {
   }
 };
 
+const getRelevantBrands = async (productFilters = {}) => {
+  try {
+    const response = await apiClient.get('/products/relevant-brands/', { params: productFilters });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching relevant brands:", error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al obtener marcas relevantes");
+  }
+};
+
 // Endpoints para productos destacados y más vendidos
 const getFeaturedProducts = async (params = {}) => {
   try {
@@ -106,6 +116,7 @@ export default {
   getCategories,
   getSubcategories,
   getRelevantTags,
+  getRelevantBrands,
   getTags,
   getFeaturedProducts,
   getBestsellerProducts,
