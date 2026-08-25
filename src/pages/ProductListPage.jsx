@@ -215,6 +215,46 @@ function ProductListPage() {
       {/* Renderiza el banner si existe */}
       {topBanner.length > 0 && <BannerCarousel banners={topBanner} />}
 
+      {/* Filtros Activos (Búsqueda, Marcas, Etiquetas) */}
+      {(initialFilters.search || (initialFilters.tags_name && initialFilters.tags_name.length > 0) || (initialFilters.brand && initialFilters.brand.length > 0)) && (
+        <div className="flex flex-wrap gap-2 mb-4 items-center justify-center md:justify-start">
+          <span className="text-sm font-semibold text-gray-600 mr-1">Filtros activos:</span>
+          {initialFilters.search && (
+            <button 
+              onClick={() => handleFiltersApply({ ...initialFilters, search: '' })}
+              className="px-3 py-1.5 bg-gray-100 border border-gray-300 text-gray-800 rounded-full text-xs flex items-center hover:bg-gray-200 transition-colors shadow-sm group"
+              title="Quitar búsqueda"
+            >
+              <span className="mr-1 opacity-70">Búsqueda:</span> <span className="font-bold">{initialFilters.search}</span> <FaTimes className="ml-2 text-gray-400 group-hover:text-gray-600 transition-colors" />
+            </button>
+          )}
+          {initialFilters.brand && initialFilters.brand.map(b => (
+            <button 
+              key={`brand-${b}`}
+              onClick={() => handleFiltersApply({ ...initialFilters, brand: initialFilters.brand.filter(x => x !== b) })}
+              className="px-3 py-1.5 bg-gray-100 border border-gray-300 text-gray-800 rounded-full text-xs flex items-center hover:bg-gray-200 transition-colors shadow-sm group"
+            >
+              <span className="mr-1 opacity-70">Marca:</span> <span className="font-bold">{b}</span> <FaTimes className="ml-2 text-gray-400 group-hover:text-gray-600 transition-colors" />
+            </button>
+          ))}
+          {initialFilters.tags_name && initialFilters.tags_name.map(t => (
+            <button 
+              key={`tag-${t}`}
+              onClick={() => handleFiltersApply({ ...initialFilters, tags_name: initialFilters.tags_name.filter(x => x !== t) })}
+              className="px-3 py-1.5 bg-gray-100 border border-gray-300 text-gray-800 rounded-full text-xs flex items-center hover:bg-gray-200 transition-colors shadow-sm group"
+            >
+              <span className="mr-1 opacity-70">Etiqueta:</span> <span className="font-bold">{t}</span> <FaTimes className="ml-2 text-gray-400 group-hover:text-gray-600 transition-colors" />
+            </button>
+          ))}
+          <button 
+             onClick={() => handleFiltersApply({ category: initialFilters.category, subcategory: initialFilters.subcategory, search: '', ordering: '', tags_name: [], brand: [] })}
+             className="px-3 py-1 text-gray-500 text-xs font-semibold hover:text-gray-800 hover:underline ml-2 transition-colors"
+          >
+            Limpiar filtros
+          </button>
+        </div>
+      )}
+
       {/* Burbujas de Categorías y Subcategorías */}
       <div className="mb-6">
         {!initialFilters.category ? (

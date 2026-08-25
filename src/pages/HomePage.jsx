@@ -93,7 +93,7 @@ const ProductSection = ({ title, products, icon, isLoading, error, sectionId }) 
         {icon && React.createElement(icon, { className: "mr-3 text-color-accent1"})}
         {title}
       </h2>
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-6">
         {products.map(product => (
           <ProductCard key={product.id} product={product} />
         ))}
@@ -122,7 +122,7 @@ function HomePage() {
         const [bannersData, categoriesData, featuredData, bestsellersData, newProductsData] = await Promise.all([
           siteSettingsService.getBanners({ placement: 'home_main', limit: 3 }).catch(e => { console.error("Banner fetch failed:", e); return []; }),
           productService.getCategories({ limit: 12 }).catch(e => { console.error("Category fetch failed:", e); return null; }),
-          productService.getFeaturedProducts({ limit: 5 }).catch(e => { console.error("Featured products fetch failed:", e); return null; }),
+          productService.getFeaturedProducts({ limit: 6 }).catch(e => { console.error("Featured products fetch failed:", e); return null; }),
           productService.getBestsellerProducts({ limit: 10 }).catch(e => { console.error("Bestseller products fetch failed:", e); return null; }),
           productService.getNewProducts({ limit: 20 }).catch(e => { console.error("New arrivals products fetch failed:", e); return null; })
         ]);
@@ -131,17 +131,17 @@ function HomePage() {
         setCategories(categoriesData?.results || categoriesData || []);
         setFeaturedProducts(featuredData?.results || featuredData || []);
         
-        // Rotar los 10 más vendidos: elegir 5 al azar cada vez que carga la página
+        // Rotar los 10 más vendidos: elegir 6 al azar cada vez que carga la página
         let fetchedBestsellers = bestsellersData?.results || bestsellersData || [];
-        if (fetchedBestsellers.length > 5) {
-            fetchedBestsellers = [...fetchedBestsellers].sort(() => 0.5 - Math.random()).slice(0, 5);
+        if (fetchedBestsellers.length > 6) {
+            fetchedBestsellers = [...fetchedBestsellers].sort(() => 0.5 - Math.random()).slice(0, 6);
         }
         setBestsellerProducts(fetchedBestsellers);
         
-        // Rotar los 20 más nuevos: elegir 5 al azar cada vez que carga la página
+        // Rotar los 20 más nuevos: elegir 6 al azar cada vez que carga la página
         let fetchedNewProducts = newProductsData?.results || newProductsData || [];
-        if (fetchedNewProducts.length > 5) {
-            fetchedNewProducts = [...fetchedNewProducts].sort(() => 0.5 - Math.random()).slice(0, 5);
+        if (fetchedNewProducts.length > 6) {
+            fetchedNewProducts = [...fetchedNewProducts].sort(() => 0.5 - Math.random()).slice(0, 6);
         }
         setNewProducts(fetchedNewProducts);
 
