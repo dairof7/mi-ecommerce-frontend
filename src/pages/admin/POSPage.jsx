@@ -5,7 +5,7 @@ import cartService from '../../services/cartService';
 import authService from '../../services/authService';
 import productService from '../../services/productService';
 import { toast } from 'react-toastify';
-import { FaUserPlus, FaFileInvoiceDollar, FaTrash, FaUserCheck, FaTimes, FaSpinner, FaSearch, FaPlusCircle, FaPlus, FaMinus, FaTimesCircle } from 'react-icons/fa';
+import { FaUserPlus, FaFileInvoiceDollar, FaTrash, FaUserCheck, FaTimes, FaSpinner, FaSearch, FaPlusCircle, FaPlus, FaMinus, FaTimesCircle, FaBoxOpen } from 'react-icons/fa';
 
 // --- Componentes Internos ---
 const formatCurrency = (value) => {
@@ -48,6 +48,9 @@ function POSPage() {
   // Estado de carga para acciones
   const [isProcessingSale, setIsProcessingSale] = useState(false);
   const [processingItemId, setProcessingItemId] = useState(null);
+
+  // Modo Bajo Pedido
+  const [isBackorderMode, setIsBackorderMode] = useState(false);
 
   // Estado para manejar los inputs de cantidad de forma diferida
   const [quantityInputs, setQuantityInputs] = useState({});
@@ -123,15 +126,15 @@ function POSPage() {
   };
 
   const handleAddProduct = async (product) => {
-    if (product.stock === 0) {
+    if (!isBackorderMode && product.stock === 0) {
       toast.warn(`"${product.name}" está agotado.`);
       return;
     }
     setProcessingItemId(product.id);
     try {
-      const updatedCart = await cartService.addOneProductToCart(product.id);
+      const updatedCart = await cartService.addOneProductToCart(product.id, isBackorderMode);
       cartDispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: updatedCart } });
-      toast.success(`"${product.name}" añadido al carrito.`); // Mensaje de éxito
+      toast.success(`"${product.name}" añadido al carrito.`);
       setProductSearchTerm('');
       setProductSearchResults([]);
     } catch (error) {
@@ -156,7 +159,7 @@ function POSPage() {
         // 1. Llama al endpoint que modifica el carrito.
         // Asumimos que `addItemToCart` es el que ESTABLECE la cantidad
         // y que devuelve el objeto del carrito completo y actualizado.
-        const updatedCartData = await cartService.addItemToCart(productId, newQuantity);
+        const updatedCartData = await cartService.addItemToCart(productId, newQuantity, isBackorderMode);
         // 2. Despacha la acción de éxito CON los datos que ya recibiste.
         // Esto actualiza el estado local INMEDIATAMENTE sin otra llamada a la API.
         cartDispatch({ type: 'LOAD_CART_SUCCESS', payload: { cart: updatedCartData } });
@@ -195,17 +198,20 @@ function POSPage() {
       toast.warn("El carrito está vacío.");
       return;
     }
-    
+
     setIsProcessingSale(true);
     const payload = {
       customer: { name: customerName, email: customerEmail, document: customerDocument, phone: customerPhone },
       user_id: selectedUser ? selectedUser.id : null,
+      is_backorder: isBackorderMode,
     };
-    
+
     try {
       const quoteData = await cartService.createQuoteFromCart(payload);
       cartDispatch({ type: 'CLEAR_CART_SUCCESS' });
-      toast.success(`Venta en punto físico registrada (Cotización #${quoteData.id})`);
+      setIsBackorderMode(false);
+      const modeMsg = isBackorderMode ? 'Pedido bajo pedido registrado' : 'Venta registrada';
+      toast.success(`${modeMsg} (Cotización #${quoteData.id})`);
       navigate(`/manage/quotes`, { state: { highlightedQuoteId: quoteData.id } });
     } catch (error) {
       const errorMsg = error.detail || error.error || error.message || "Error al registrar la venta.";
@@ -275,9 +281,36 @@ function POSPage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold text-color-primary mb-6">Punto de Venta (POS)</h1>
-      <p className="text-gray-600 mb-8 max-w-3xl">Utiliza esta interfaz para añadir productos al carrito y registrar ventas para clientes.</p>
-      
+      <div className="flex flex-wrap items-center justify-between mb-6 gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-color-primary">Punto de Venta (POS)</h1>
+          <p className="text-gray-600 mt-1 max-w-xl">Registra ventas para clientes en tienda física.</p>
+        </div>
+        {/* Toggle Modo Bajo Pedido */}
+        <button
+          type="button"
+          onClick={() => { setIsBackorderMode(prev => !prev); }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm border-2 transition-all ${
+            isBackorderMode
+              ? 'bg-orange-500 border-orange-600 text-white shadow-lg'
+              : 'bg-white border-gray-300 text-gray-600 hover:border-orange-400 hover:text-orange-500'
+          }`}
+        >
+          <FaBoxOpen />
+          {isBackorderMode ? 'Modo Bajo Pedido ACTIVO' : 'Activar Bajo Pedido'}
+        </button>
+      </div>
+
+      {/* Banner de aviso cuando modo backorder está activo */}
+      {isBackorderMode && (
+        <div className="mb-6 p-4 bg-orange-50 border-l-4 border-orange-500 rounded-r-lg flex items-start gap-3">
+          <FaBoxOpen className="text-orange-500 mt-0.5 flex-shrink-0" size={18} />
+          <div>
+            <p className="font-semibold text-orange-800">Modo Bajo Pedido activo</p>
+            <p className="text-sm text-orange-700">Puedes agregar productos sin stock. El pedido quedará pendiente de confirmación y el stock se descontará al momento del despacho.</p>
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Columna para el formulario del cliente y el resumen */}
         <div className="lg:col-span-1 lg:order-2">
@@ -348,9 +381,13 @@ function POSPage() {
               <div className="flex items-center justify-between border-t border-gray-200 pt-4"><dt className="text-base font-medium text-gray-900">Total</dt><dd className="text-base font-bold text-gray-900">{formatCurrency(total)}</dd></div>
             </dl>
             <div className="mt-6">
-                <button type="submit" disabled={isProcessingSale || itemCount === 0 || isCartLoading} className="w-full flex items-center justify-center rounded-md border border-transparent bg-green-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed">
-                    {isProcessingSale ? <FaSpinner className="animate-spin mr-2" /> : <FaFileInvoiceDollar className="ml-2"/>}
-                    {isProcessingSale ? 'Registrando...' : 'Registrar Venta'}
+                <button type="submit" disabled={isProcessingSale || itemCount === 0 || isCartLoading} className={`w-full flex items-center justify-center rounded-md border border-transparent px-6 py-3 text-base font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed ${
+                  isBackorderMode
+                    ? 'bg-orange-500 hover:bg-orange-600 focus:ring-orange-400'
+                    : 'bg-green-600 hover:bg-green-700 focus:ring-green-500'
+                }`}>
+                    {isProcessingSale ? <FaSpinner className="animate-spin mr-2" /> : isBackorderMode ? <FaBoxOpen className="mr-2"/> : <FaFileInvoiceDollar className="mr-2"/>}
+                    {isProcessingSale ? 'Registrando...' : isBackorderMode ? 'Registrar Bajo Pedido' : 'Registrar Venta'}
                 </button>
             </div>
           </form>
@@ -379,27 +416,39 @@ function POSPage() {
                 <ul className="absolute z-30 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-80 overflow-y-auto shadow-lg">
                   {productSearchResults.map(product => (
                     <li key={product.id} className="border-b last:border-b-0">
-                      <button 
+                      <button
                         type="button"
                         onClick={() => handleAddProduct(product)}
-                        disabled={product.stock === 0}
+                        disabled={!isBackorderMode && product.stock === 0}
                         className="px-4 py-3 cursor-pointer hover:bg-color-accent1 hover:text-white w-full text-left flex items-center justify-between group disabled:bg-gray-100 disabled:cursor-not-allowed"
                       >
                         <div className="flex items-center">
-                          <img src={product.images?.[0]?.image || '/logo.png'} alt={product.name} className="w-10 h-10 object-cover rounded mr-3" 
+                          <img src={product.images?.[0]?.image || '/logo.png'} alt={product.name} className="w-10 h-10 object-cover rounded mr-3"
                           onError={(e) => {
-                            e.target.onerror = null; // Evita bucles infinitos si logo.png también falla
+                            e.target.onerror = null;
                             e.target.src = '/logo.png';
                           }}
                           />
                           <div>
                             <p className="font-semibold text-sm">{product.name}</p>
-                            <p className={`text-xs ${product.stock > 0 ? 'text-gray-500 group-hover:text-white' : 'text-red-500 font-semibold'}`}>{product.stock > 0 ? `Stock: ${product.stock}` : 'Agotado'}</p>
+                            <p className={`text-xs ${
+                              product.stock > 0
+                                ? 'text-gray-500 group-hover:text-white'
+                                : isBackorderMode
+                                  ? 'text-orange-500 font-semibold'
+                                  : 'text-red-500 font-semibold'
+                            }`}>
+                              {product.stock > 0
+                                ? `Stock: ${product.stock}`
+                                : isBackorderMode
+                                  ? 'Sin stock (bajo pedido)'
+                                  : 'Agotado'}
+                            </p>
                           </div>
                         </div>
                         <div className="text-right flex items-center gap-2">
                            <p className="font-semibold text-sm">{formatCurrency(product.final_sale_price)}</p>
-                           <FaPlusCircle className="text-green-500" />
+                           <FaPlusCircle className={isBackorderMode && product.stock === 0 ? 'text-orange-400' : 'text-green-500'} />
                         </div>
                       </button>
                     </li>

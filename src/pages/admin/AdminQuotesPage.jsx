@@ -176,7 +176,7 @@ function AdminQuotesPage() {
             }
 
         } catch (error) {
-            toast.error(error.error || `Error al procesar la acción para la cotización #${quoteId}.`);
+            toast.error(error.error || `Error al procesar la acción para la cotización (Verificar el Stock) #${quoteId}.`);
         } finally {
             setProcessingQuoteId(null);
         }

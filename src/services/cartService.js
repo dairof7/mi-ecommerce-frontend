@@ -30,16 +30,11 @@ const getCart = async () => {
 };
 
 // Añadir un item al carrito
-const addItemToCart = async (productId, quantity) => {
+const addItemToCart = async (productId, quantity, bypassStock = false) => {
   try {
-    // Tu endpoint es una acción personalizada en CartViewSet
-    // Asumimos que es POST /api/carts/carts/add_item/
-    // El schema.json para esta acción (carts_carts_add_item_create) tiene un requestBody
-    // que referencia #/components/schemas/Cart, lo cual no es correcto para el payload de add_item.
-    // El payload real debería ser { product_id: ..., quantity: ... }
-    const payload = { product_id: productId, quantity };
+    const payload = { product_id: productId, quantity, ...(bypassStock && { bypass_stock: true }) };
     const response = await apiClient.post('/carts/carts/add_item/', payload);
-    return response.data; // Debería devolver el CartItem creado/actualizado o el carrito completo
+    return response.data;
   } catch (error) {
     console.error("Error adding item to cart:", error.response?.data || error.message);
     throw error.response?.data || new Error("Error al añadir item al carrito");
@@ -93,12 +88,11 @@ const addManyProductToCart = async (productId, quantity) => {
   }
 };
 
-const addOneProductToCart = async (productId) => {
+const addOneProductToCart = async (productId, bypassStock = false) => {
   try {
-    const payload = { product_id: productId };
-    // Asumiendo que el endpoint 'add_one_to_cart' está en /api/carts/carts/add-one/
+    const payload = { product_id: productId, ...(bypassStock && { bypass_stock: true }) };
     const response = await apiClient.post('/carts/carts/add-one/', payload);
-    return response.data; // Devuelve el carrito actualizado
+    return response.data;
   } catch (error) {
     console.error("Error adding one item to cart:", error.response?.data || error.message);
     throw error.response?.data || new Error("Error al añadir un item al carrito");
