@@ -247,13 +247,13 @@ function ProductDetailPage() {
             
             <div className="mb-2 text-xs sm:text-sm">
               {product.category && (
-                <Link to={`/category/${product.category.id}`} className="text-color-accent2 hover:underline mr-1">
+                <Link to={`/products?category=${product.category.id}`} className="text-color-accent2 hover:underline mr-1">
                   {product.category.name}
                 </Link>
               )}
-              {product.subcategory && product.category && <span className="text-gray-400 mx-1"></span>}
+              {product.subcategory && product.category && <span className="text-gray-400 mx-1">{'>'}</span>}
               {product.subcategory && (
-                <Link to={`/subcategory/${product.subcategory.id}`} className="text-color-accent2 hover:underline">
+                <Link to={`/products?category=${product.category?.id}&subcategory=${product.subcategory.id}`} className="text-color-accent2 hover:underline">
                   {product.subcategory.name}
                 </Link>
               )}
