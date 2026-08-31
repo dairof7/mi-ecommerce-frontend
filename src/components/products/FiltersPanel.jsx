@@ -246,9 +246,9 @@ const FiltersPanel = React.memo(({
     </div>
 )}
       
-      {/* Botón "Aplicar" ahora se renderiza aquí */}
-      <div className="pt-4 border-t">
-          <button type="submit" className="w-full flex items-center justify-center bg-color-accent1 text-white font-bold py-2 px-4 rounded-md hover:bg-opacity-80">
+      {/* Botón "Aplicar" ahora se renderiza aquí (Sticky en móvil) */}
+      <div className="sticky -bottom-6 -mx-6 px-6 bg-white pt-3 pb-6 mt-4 border-t border-gray-200 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] md:static md:bottom-auto md:mx-0 md:px-0 md:bg-transparent md:pt-4 md:pb-0 md:shadow-none">
+          <button type="submit" className="w-full flex items-center justify-center bg-color-accent1 text-white font-bold py-3 px-4 rounded-md hover:bg-opacity-80 shadow-md md:py-2 md:shadow-none">
             <FaFilter className="mr-2"/> Aplicar Filtros
           </button>
       </div>

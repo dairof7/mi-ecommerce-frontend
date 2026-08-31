@@ -135,25 +135,31 @@ function ProductListPage() {
       setSubcategories([]);
     }
 
-    // Cargar tags relevantes basados en los filtros actuales.
-    const filtersForTags = {
+    // Cargar tags y marcas relevantes basados en los filtros actuales.
+    const filtersForAggregations = {
         category: initialFilters.category,
         subcategory: initialFilters.subcategory,
         search: initialFilters.search,
+        tags_name: initialFilters.tags_name,
+        brand: initialFilters.brand,
     };
-    Object.keys(filtersForTags).forEach(key => !filtersForTags[key] && delete filtersForTags[key]);
+    Object.keys(filtersForAggregations).forEach(key => {
+        if (!filtersForAggregations[key] || (Array.isArray(filtersForAggregations[key]) && filtersForAggregations[key].length === 0)) {
+            delete filtersForAggregations[key];
+        }
+    });
 
     setIsLoadingFilters(true); // Inicia la carga de filtros
     Promise.all([
-        productService.getRelevantTags(filtersForTags)
+        productService.getRelevantTags(filtersForAggregations)
             .then(data => setRelevantTags(data || []))
             .catch(() => setRelevantTags([])),
-        productService.getRelevantBrands(filtersForTags)
+        productService.getRelevantBrands(filtersForAggregations)
             .then(data => setRelevantBrands(data || []))
             .catch(() => setRelevantBrands([]))
     ]).finally(() => setIsLoadingFilters(false)); // Termina la carga de filtros
 
-  }, [initialFilters.category, initialFilters.subcategory, initialFilters.search]); // Dependencias estables
+  }, [initialFilters]); // Dependemos de todo initialFilters para reaccionar a cualquier cambio de filtro
 
   // 3. Efecto para cargar el banner superior (solo una vez)
   useEffect(() => {
