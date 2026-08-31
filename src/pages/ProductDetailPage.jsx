@@ -353,6 +353,11 @@ function ProductDetailPage() {
                     </p>
                 )}
               </>
+            ) : product.incoming_stock > 0 ? (
+              <div className="text-center p-3 rounded-md bg-amber-100 border border-amber-300">
+                <p className="text-xl font-bold text-amber-600">¡Llegará pronto!</p>
+                <p className="text-sm text-amber-700 mt-1">Este producto está en camino a nuestras bodegas. ¡Vuelve pronto!</p>
+              </div>
             ) : (
               <p className="text-center text-xl font-semibold text-red-600 bg-red-100 p-3 rounded-md">Producto Agotado</p>
             )}

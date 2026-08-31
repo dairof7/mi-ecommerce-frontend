@@ -76,7 +76,10 @@ const imageUrl = product.images && product.images.length > 0
   };
 
   const buttonText = () => {
-    if (product.stock === 0) return 'Agotado';
+    if (product.stock === 0) {
+        if (product.incoming_stock > 0) return '¡Llegará pronto!';
+        return 'Agotado';
+    }
     if (isAdding) return 'Añadiendo...';
     if (!isAuthenticated) return 'Ver Producto'; // O 'Iniciar Sesión para Comprar'
     return 'Añadir al Carrito';
@@ -151,9 +154,12 @@ const imageUrl = product.images && product.images.length > 0
             onClick={handleButtonClick} // Cambiado a handleButtonClick
             disabled={product.stock === 0 || isAdding} // Deshabilitar si está agotado o añadiendo
             className={`w-full flex items-center justify-center text-white font-medium rounded-lg text-xs sm:text-sm px-3 py-2 md:px-4 md:py-2.5 text-center transition-colors duration-150 ease-in-out
-                        ${product.stock === 0 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                                              : (isAdding ? 'bg-color-accent2 opacity-70 cursor-wait' 
-                                                          : 'bg-color-secondary hover:bg-color-accent1 focus:ring-4 focus:outline-none focus:ring-blue-300')}`}
+                        ${product.stock === 0 
+                            ? (product.incoming_stock > 0 
+                                ? 'bg-amber-500 text-white cursor-not-allowed' 
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed') 
+                            : (isAdding ? 'bg-color-accent2 opacity-70 cursor-wait' 
+                                        : 'bg-color-secondary hover:bg-color-accent1 focus:ring-4 focus:outline-none focus:ring-blue-300')}`}
             title={buttonText()}
           >
             <FaCartPlus className="mr-2" />
