@@ -70,6 +70,8 @@ function AdminQuotesPage() {
     const [filters, setFilters] = useState({
         status: searchParams.get('status') || '',
         search: searchParams.get('search') || '',
+        start_date: searchParams.get('start_date') || '',
+        end_date: searchParams.get('end_date') || '',
         page: parseInt(searchParams.get('page')) || 1,
     });
     
@@ -86,6 +88,8 @@ function AdminQuotesPage() {
             const apiParams = { page: filters.page };
             if (filters.status) apiParams.status = filters.status;
             if (filters.search) apiParams.search = filters.search;
+            if (filters.start_date) apiParams.start_date = filters.start_date;
+            if (filters.end_date) apiParams.end_date = filters.end_date;
             // Tu API debe soportar estos filtros
 
             const data = await cartService.getQuotes(apiParams);
@@ -113,7 +117,11 @@ function AdminQuotesPage() {
         const { name, value } = e.target;
         setFilters(prev => ({ ...prev, [name]: value, page: 1 })); // Resetea a página 1 al cambiar filtro
         const newSearchParams = new URLSearchParams(searchParams);
-        newSearchParams.set(name, value);
+        if (value) {
+            newSearchParams.set(name, value);
+        } else {
+            newSearchParams.delete(name);
+        }
         newSearchParams.set('page', '1');
         setSearchParams(newSearchParams);
     };
@@ -123,7 +131,11 @@ function AdminQuotesPage() {
         const searchTerm = e.target.elements.search.value;
         setFilters(prev => ({ ...prev, search: searchTerm, page: 1 }));
         const newSearchParams = new URLSearchParams(searchParams);
-        newSearchParams.set('search', searchTerm);
+        if (searchTerm) {
+            newSearchParams.set('search', searchTerm);
+        } else {
+            newSearchParams.delete('search');
+        }
         newSearchParams.set('page', '1');
         setSearchParams(newSearchParams);
     };
@@ -204,13 +216,21 @@ function AdminQuotesPage() {
 
             {/* Panel de Filtros */}
             <div className="p-4 bg-gray-100 rounded-lg mb-6 shadow">
-                <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="md:col-span-1">
-                        <label htmlFor="search" className="block text-sm font-medium text-gray-700">Buscar (ID, Cliente)</label>
+                        <label htmlFor="search" className="block text-sm font-medium text-gray-700">Buscar (ID, Cliente, Producto)</label>
                         <div className="flex">
                             <input type="text" name="search" id="search" defaultValue={filters.search} className="input-style w-full rounded-l-md !border-r-0" />
                             <button type="submit" className="bg-color-secondary text-white px-4 py-2 rounded-r-md hover:bg-color-accent1"><FaSearch /></button>
                         </div>
+                    </div>
+                    <div className="md:col-span-1">
+                        <label htmlFor="start_date" className="block text-sm font-medium text-gray-700">Desde</label>
+                        <input type="date" name="start_date" id="start_date" value={filters.start_date} onChange={handleFilterChange} className="input-style w-full" />
+                    </div>
+                    <div className="md:col-span-1">
+                        <label htmlFor="end_date" className="block text-sm font-medium text-gray-700">Hasta</label>
+                        <input type="date" name="end_date" id="end_date" value={filters.end_date} onChange={handleFilterChange} className="input-style w-full" />
                     </div>
                     <div className="md:col-span-1">
                         <label htmlFor="status" className="block text-sm font-medium text-gray-700">Filtrar por Estado</label>
@@ -235,6 +255,7 @@ function AdminQuotesPage() {
                             <th scope="col" className="px-6 py-3">ID / Fecha</th>
                             <th scope="col" className="px-6 py-3">Cliente</th>
                             <th scope="col" className="px-6 py-3">Total</th>
+                            <th scope="col" className="px-6 py-3">Ganancia</th>
                             <th scope="col" className="px-6 py-3">Estado</th>
                             <th scope="col" className="px-6 py-3">Acciones</th>
                         </tr>
@@ -267,6 +288,11 @@ function AdminQuotesPage() {
                                             }
                                     </td>
                                     <td className="px-6 py-4 font-bold">{formatCurrency(quote.total)}</td>
+                                    <td className="px-6 py-4">
+                                        <div className={`font-bold ${quote.profit > 0 ? 'text-green-600' : 'text-gray-500'}`}>
+                                            {formatCurrency(quote.profit)}
+                                        </div>
+                                    </td>
                                     <td className="px-6 py-4">{getStatusBadge(quote.status)}</td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}> 
