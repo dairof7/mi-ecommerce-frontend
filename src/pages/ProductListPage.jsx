@@ -86,7 +86,14 @@ function ProductListPage() {
     const fetchProducts = async () => {
       setIsLoadingProducts(true);
       setError(null);
-      const apiParams = Object.fromEntries(searchParams.entries());
+      const apiParams = {
+        ...Object.fromEntries(searchParams.entries()),
+        page: searchParams.get('page') || 1,
+        brand: searchParams.getAll('brand'),
+        tags_name: searchParams.getAll('tags_name'),
+      };
+      if (apiParams.brand.length === 0) delete apiParams.brand;
+      if (apiParams.tags_name.length === 0) delete apiParams.tags_name;
 
       try {
         let data;
@@ -240,7 +247,7 @@ function ProductListPage() {
               onClick={() => handleFiltersApply({ ...initialFilters, brand: initialFilters.brand.filter(x => x !== b) })}
               className="px-3 py-1.5 bg-gray-100 border border-gray-300 text-gray-800 rounded-full text-xs flex items-center hover:bg-gray-200 transition-colors shadow-sm group"
             >
-              <span className="mr-1 opacity-70">Marca:</span> <span className="font-bold">{b}</span> <FaTimes className="ml-2 text-gray-400 group-hover:text-gray-600 transition-colors" />
+              <span className="mr-1 opacity-70">Marca:</span> <span className="font-bold">{relevantBrands.find(rb => rb.id.toString() === b.toString())?.name || b}</span> <FaTimes className="ml-2 text-gray-400 group-hover:text-gray-600 transition-colors" />
             </button>
           ))}
           {initialFilters.tags_name && initialFilters.tags_name.map(t => (

@@ -179,7 +179,7 @@ const FiltersPanel = React.memo(({
         <div className="max-h-48 overflow-y-auto space-y-2 pr-1 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
         {relevantBrands
             .filter(brand => !showAllBrands || brand.name.toLowerCase().includes(brandSearchTerm.toLowerCase()))
-            .slice(0, showAllBrands ? undefined : 5)
+            .filter((brand, index) => showAllBrands || selectedBrands.includes(brand.id.toString()) || index < 5)
             .map(brand => {
                 const brandIdStr = brand.id.toString();
                 return (
