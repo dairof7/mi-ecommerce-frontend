@@ -40,6 +40,19 @@ function POSPage() {
   const [userSearchResults, setUserSearchResults] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
 
+  // Estados para Modal de Inscribir Nuevo Cliente
+  const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [newCustomerData, setNewCustomerData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    document: '',
+    phone: '',
+    address: '',
+    password: '',
+  });
+
   // Estados para Búsqueda de Productos
   const [productSearchTerm, setProductSearchTerm] = useState('');
   const [isSearchingProduct, setIsSearchingProduct] = useState(false);
@@ -123,6 +136,90 @@ function POSPage() {
     setCustomerEmail('');
     setCustomerDocument('');
     setCustomerPhone('');
+  };
+
+  const handleOpenCreateUserModal = () => {
+    const names = customerName.trim().split(' ');
+    const firstName = names[0] || '';
+    const lastName = names.slice(1).join(' ') || '';
+    setNewCustomerData({
+      firstName: newCustomerData.firstName || firstName,
+      lastName: newCustomerData.lastName || lastName,
+      email: newCustomerData.email || customerEmail,
+      document: newCustomerData.document || customerDocument,
+      phone: newCustomerData.phone || customerPhone,
+      address: newCustomerData.address || '',
+      password: '',
+    });
+    setIsCreateUserModalOpen(true);
+  };
+
+  const handleCloseCreateUserModal = () => {
+    if (!isCreatingUser) {
+      setIsCreateUserModalOpen(false);
+    }
+  };
+
+  const handleCreateCustomerSubmit = async (e) => {
+    e.preventDefault();
+    if (!newCustomerData.firstName.trim()) {
+      toast.warn("El nombre es obligatorio.");
+      return;
+    }
+    if (!newCustomerData.email.trim()) {
+      toast.warn("El correo electrónico es obligatorio.");
+      return;
+    }
+
+    setIsCreatingUser(true);
+    try {
+      const payload = {
+        first_name: newCustomerData.firstName.trim(),
+        last_name: newCustomerData.lastName.trim(),
+        email: newCustomerData.email.trim(),
+        document: newCustomerData.document.trim(),
+        phone: newCustomerData.phone.trim(),
+        address: newCustomerData.address.trim(),
+        password: newCustomerData.password.trim(),
+      };
+      const createdUser = await authService.createCustomerFromPOS(payload);
+      toast.success(`¡Cliente "${createdUser.full_name}" inscrito y seleccionado!`);
+      handleSelectUser(createdUser);
+      setIsCreateUserModalOpen(false);
+      setNewCustomerData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        document: '',
+        phone: '',
+        address: '',
+        password: '',
+      });
+    } catch (error) {
+      const errorData = error.response?.data;
+      let errorMsg = "Error al registrar el cliente.";
+      if (errorData) {
+        if (typeof errorData === 'string') {
+          errorMsg = errorData;
+        } else if (errorData.email) {
+          errorMsg = Array.isArray(errorData.email) ? errorData.email[0] : errorData.email;
+        } else if (errorData.error) {
+          errorMsg = errorData.error;
+        } else if (errorData.detail) {
+          errorMsg = errorData.detail;
+        } else {
+          const firstKey = Object.keys(errorData)[0];
+          if (firstKey) {
+            errorMsg = `${firstKey}: ${Array.isArray(errorData[firstKey]) ? errorData[firstKey][0] : errorData[firstKey]}`;
+          }
+        }
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      toast.error(errorMsg);
+    } finally {
+      setIsCreatingUser(false);
+    }
   };
 
   const handleAddProduct = async (product) => {
@@ -315,7 +412,22 @@ function POSPage() {
         {/* Columna para el formulario del cliente y el resumen */}
         <div className="lg:col-span-1 lg:order-2">
           <form onSubmit={handleCreatePosSale} className="bg-white p-6 rounded-lg shadow-lg sticky top-24">
-            <h2 className="text-xl font-semibold text-color-secondary mb-4 flex items-center"><FaUserPlus className="mr-2" /> Datos del Cliente</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-color-secondary flex items-center">
+                <FaUserPlus className="mr-2" /> Datos del Cliente
+              </h2>
+              {!selectedUser && (
+                <button
+                  type="button"
+                  onClick={handleOpenCreateUserModal}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md bg-color-secondary text-white hover:bg-color-accent1 transition-all shadow-sm"
+                  title="Inscribir un nuevo cliente en el sistema"
+                >
+                  <FaPlusCircle size={12} />
+                  <span>+ Inscribir Cliente</span>
+                </button>
+              )}
+            </div>
             <div className="relative mb-4">
                 <label htmlFor="userSearch" className="block text-sm font-medium text-gray-700">Buscar Cliente Registrado</label>
                 <input type="text" id="userSearch" value={searchTermUser} onChange={(e) => setSearchTermUser(e.target.value)} placeholder="Nombre, email, documento..." className="input-style w-full mt-1" disabled={!!selectedUser} autoComplete="off" />
@@ -341,7 +453,16 @@ function POSPage() {
                 </div>
             )}
             <div className={`space-y-4 transition-opacity duration-300 ${selectedUser ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
-                <p className="text-xs text-center text-gray-500 border-b pb-2 mb-2">O ingresa los datos para un cliente invitado:</p>
+                <div className="text-xs text-gray-500 border-b pb-2 mb-2 flex items-center justify-between">
+                  <span>O ingresa datos para cliente invitado:</span>
+                  <button
+                    type="button"
+                    onClick={handleOpenCreateUserModal}
+                    className="text-xs text-color-secondary hover:underline font-semibold inline-flex items-center gap-1"
+                  >
+                    <FaUserPlus size={11} /> ¿Desea inscribirse?
+                  </button>
+                </div>
                 <div><label htmlFor="customerName" className="block text-sm font-medium text-gray-700">Nombre</label><input type="text" id="customerName" value={customerName} onChange={e => setCustomerName(e.target.value)} className="input-style w-full mt-1" /></div>
                 <div><label htmlFor="customerEmail" className="block text-sm font-medium text-gray-700">Email</label><input type="email" id="customerEmail" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} className="input-style w-full mt-1" /></div>
                 <div><label htmlFor="customerDocument" className="block text-sm font-medium text-gray-700">Documento</label><input type="text" id="customerDocument" value={customerDocument} onChange={e => setCustomerDocument(e.target.value)} className="input-style w-full mt-1" /></div>
@@ -523,6 +644,154 @@ function POSPage() {
           )}
         </div>
       </div>
+
+      {/* Modal para Inscribir Nuevo Cliente */}
+      {isCreateUserModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 relative">
+            <div className="flex items-center justify-between border-b pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-blue-50 text-color-secondary rounded-lg">
+                  <FaUserPlus size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Inscribir Nuevo Cliente</h3>
+                  <p className="text-xs text-gray-500">Registra un cliente de la tienda física y vincúlalo a esta venta.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseCreateUserModal}
+                disabled={isCreatingUser}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                title="Cerrar"
+              >
+                <FaTimes size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateCustomerSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Nombre <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej. Juan"
+                    value={newCustomerData.firstName}
+                    onChange={(e) => setNewCustomerData(prev => ({ ...prev, firstName: e.target.value }))}
+                    className="input-style w-full text-sm"
+                    disabled={isCreatingUser}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Apellido</label>
+                  <input
+                    type="text"
+                    placeholder="Ej. Pérez"
+                    value={newCustomerData.lastName}
+                    onChange={(e) => setNewCustomerData(prev => ({ ...prev, lastName: e.target.value }))}
+                    className="input-style w-full text-sm"
+                    disabled={isCreatingUser}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Cédula / Documento</label>
+                  <input
+                    type="text"
+                    placeholder="Ej. 1098765432"
+                    value={newCustomerData.document}
+                    onChange={(e) => setNewCustomerData(prev => ({ ...prev, document: e.target.value }))}
+                    className="input-style w-full text-sm"
+                    disabled={isCreatingUser}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Teléfono / Celular</label>
+                  <input
+                    type="tel"
+                    placeholder="Ej. 3001234567"
+                    value={newCustomerData.phone}
+                    onChange={(e) => setNewCustomerData(prev => ({ ...prev, phone: e.target.value }))}
+                    className="input-style w-full text-sm"
+                    disabled={isCreatingUser}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Correo Electrónico <span className="text-red-500">*</span></label>
+                <input
+                  type="email"
+                  required
+                  placeholder="cliente@ejemplo.com"
+                  value={newCustomerData.email}
+                  onChange={(e) => setNewCustomerData(prev => ({ ...prev, email: e.target.value }))}
+                  className="input-style w-full text-sm"
+                  disabled={isCreatingUser}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Dirección (Opcional)</label>
+                <input
+                  type="text"
+                  placeholder="Ej. Calle 10 # 5-20"
+                  value={newCustomerData.address}
+                  onChange={(e) => setNewCustomerData(prev => ({ ...prev, address: e.target.value }))}
+                  className="input-style w-full text-sm"
+                  disabled={isCreatingUser}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Contraseña (Opcional)
+                </label>
+                <input
+                  type="password"
+                  placeholder="Por defecto usará su cédula o se generará una"
+                  value={newCustomerData.password}
+                  onChange={(e) => setNewCustomerData(prev => ({ ...prev, password: e.target.value }))}
+                  className="input-style w-full text-sm"
+                  disabled={isCreatingUser}
+                  autoComplete="new-password"
+                />
+                <p className="text-[11px] text-gray-500 mt-1">Si se deja vacía, el cliente podrá usar su número de documento como clave o restablecerla luego.</p>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t mt-4">
+                <button
+                  type="button"
+                  onClick={handleCloseCreateUserModal}
+                  disabled={isCreatingUser}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingUser}
+                  className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-color-secondary hover:bg-color-accent1 rounded-lg shadow transition-colors disabled:opacity-50"
+                >
+                  {isCreatingUser ? (
+                    <>
+                      <FaSpinner className="animate-spin" /> Registrando...
+                    </>
+                  ) : (
+                    <>
+                      <FaUserPlus /> Inscribir y Seleccionar
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

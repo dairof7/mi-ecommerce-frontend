@@ -83,6 +83,11 @@ const searchUsers = async (searchTerm) => {
   }
 };
 
+const createCustomerFromPOS = async (customerData) => {
+  const response = await apiClient.post('/accounts/pos-create-user/', customerData);
+  return response.data;
+};
+
 export default {
   register,
   login,
@@ -91,4 +96,5 @@ export default {
   getProfile,
   updateProfile,
   searchUsers,
+  createCustomerFromPOS,
 };
