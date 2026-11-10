@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import cartService from '../../services/cartService'; // Asume que tiene getQuotes, cancelQuote
 import quoteAdminService from '../../services/quoteAdminService';
 import { toast } from 'react-toastify';
-import { FaFileInvoiceDollar, FaCheck, FaTimes, FaTruck, FaRedo, FaSearch } from 'react-icons/fa';
+import { FaFileInvoiceDollar, FaCheck, FaTimes, FaTruck, FaRedo, FaSearch, FaEdit, FaMoneyBillWave, FaSpinner, FaPaperPlane, FaUserEdit, FaFilePdf, FaEnvelope, FaExternalLinkAlt } from 'react-icons/fa';
 import { useSearchParams } from 'react-router-dom';
 
 const formatCurrency = (value) => {
@@ -26,7 +26,7 @@ const Loader = ({ message = "Cargando cotizaciones..." }) => (
   </div>
 );
 
-// Componente para mostrar los items de una cotización
+// Componente para mostrar los items de una cotización con link al producto
 const QuoteItemsList = ({ items }) => {
   if (!items || items.length === 0) {
     return <p className="text-sm text-gray-500 italic">Esta cotización no tiene items.</p>;
@@ -34,10 +34,27 @@ const QuoteItemsList = ({ items }) => {
   return (
     <ul className="mt-2 space-y-2 pl-4 border-l-2 border-gray-200">
       {items.map(item => (
-        <li key={item.id} className="text-sm text-gray-700">
-          <span className="font-medium">{item.quantity} x {item.product_name}</span>
-          <span className="text-gray-500"> ({formatCurrency(item.price_at_quote)} c/u)</span>
-          <span className="float-right font-semibold">{formatCurrency(item.subtotal)}</span>
+        <li key={item.id} className="text-sm text-gray-700 flex flex-wrap items-center justify-between gap-2 py-0.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-semibold text-gray-800">{item.quantity} x</span>
+            {item.product ? (
+              <Link
+                to={`/products/${item.product}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="font-medium text-color-secondary hover:text-color-accent1 hover:underline inline-flex items-center gap-1 transition-colors"
+                title={`Ver "${item.product_name}" en la tienda (abre en nueva pestaña)`}
+              >
+                <span>{item.product_name}</span>
+                <FaExternalLinkAlt size={10} className="text-gray-400 hover:text-color-accent1 flex-shrink-0" />
+              </Link>
+            ) : (
+              <span className="font-medium text-gray-800">{item.product_name}</span>
+            )}
+            <span className="text-xs text-gray-500">({formatCurrency(item.price_at_quote)} c/u)</span>
+          </div>
+          <span className="font-semibold text-gray-900 ml-auto">{formatCurrency(item.subtotal)}</span>
         </li>
       ))}
     </ul>
@@ -77,6 +94,107 @@ function AdminQuotesPage() {
     
     // Para manejar el estado de carga de botones de acción
     const [processingQuoteId, setProcessingQuoteId] = useState(null);
+
+    // Estados para el modal de edición de comprador, abono y notas
+    const [editingQuote, setEditingQuote] = useState(null);
+    const [editCustomerName, setEditCustomerName] = useState('');
+    const [editCustomerEmail, setEditCustomerEmail] = useState('');
+    const [editCustomerDocument, setEditCustomerDocument] = useState('');
+    const [editCustomerPhone, setEditCustomerPhone] = useState('');
+    const [editCustomerAddress, setEditCustomerAddress] = useState('');
+    const [editPaidAmount, setEditPaidAmount] = useState('');
+    const [editNotes, setEditNotes] = useState('');
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+    // Estados para el modal de reenvío de factura / correo
+    const [resendModalQuote, setResendModalQuote] = useState(null);
+    const [resendEmailAddress, setResendEmailAddress] = useState('');
+    const [isResendingEmail, setIsResendingEmail] = useState(false);
+
+    const handleOpenEditModal = (quote) => {
+        setEditingQuote(quote);
+        setEditCustomerName(quote.customer_name || quote.user_detail?.user || '');
+        setEditCustomerEmail(quote.customer_email || quote.user_email || '');
+        setEditCustomerDocument(quote.customer_document || quote.user_detail?.document || '');
+        setEditCustomerPhone(quote.customer_phone || quote.user_detail?.phone || '');
+        setEditCustomerAddress(quote.customer_address || quote.user_detail?.address || '');
+        setEditPaidAmount(quote.paid_amount !== null && quote.paid_amount !== undefined ? String(quote.paid_amount) : '0');
+        setEditNotes(quote.notes || '');
+    };
+
+    const handleCloseEditModal = () => {
+        setEditingQuote(null);
+        setEditCustomerName('');
+        setEditCustomerEmail('');
+        setEditCustomerDocument('');
+        setEditCustomerPhone('');
+        setEditCustomerAddress('');
+        setEditPaidAmount('');
+        setEditNotes('');
+    };
+
+    const handleSaveEditQuote = async (e) => {
+        e.preventDefault();
+        if (!editingQuote) return;
+        setIsSavingEdit(true);
+        try {
+            const numericPaid = parseFloat(editPaidAmount) || 0;
+            const response = await quoteAdminService.updateQuote(editingQuote.id, {
+                customer_name: editCustomerName.trim(),
+                customer_email: editCustomerEmail.trim(),
+                customer_document: editCustomerDocument.trim(),
+                customer_phone: editCustomerPhone.trim(),
+                customer_address: editCustomerAddress.trim(),
+                paid_amount: numericPaid,
+                notes: editNotes.trim(),
+            });
+            const updatedQuote = response.data;
+            setQuotes(prevQuotes => prevQuotes.map(q => q.id === editingQuote.id ? { ...q, ...updatedQuote } : q));
+            toast.success(`Pedido #${editingQuote.id} actualizado exitosamente.`);
+            handleCloseEditModal();
+        } catch (error) {
+            const errorMsg = error.response?.data?.detail || error.message || "Error al actualizar el pedido.";
+            toast.error(errorMsg);
+        } finally {
+            setIsSavingEdit(false);
+        }
+    };
+
+    const handleOpenResendModal = (quote) => {
+        setResendModalQuote(quote);
+        setResendEmailAddress(quote.customer_email || quote.user_email || '');
+    };
+
+    const handleCloseResendModal = () => {
+        setResendModalQuote(null);
+        setResendEmailAddress('');
+    };
+
+    const handleConfirmResendEmail = async (e) => {
+        e.preventDefault();
+        if (!resendModalQuote) return;
+        if (!resendEmailAddress.trim()) {
+            toast.warn("Por favor ingresa un correo electrónico de destino.");
+            return;
+        }
+        setIsResendingEmail(true);
+        try {
+            const response = await quoteAdminService.resendEmail(resendModalQuote.id, {
+                email: resendEmailAddress.trim(),
+            });
+            toast.success(response.data?.message || `Documento enviado a ${resendEmailAddress.trim()}`);
+            if (resendEmailAddress.trim() !== resendModalQuote.customer_email) {
+                setQuotes(prevQuotes => prevQuotes.map(q => q.id === resendModalQuote.id ? { ...q, customer_email: resendEmailAddress.trim() } : q));
+            }
+            handleCloseResendModal();
+        } catch (error) {
+            const errorMsg = error.response?.data?.error || error.response?.data?.detail || error.message || "Error al reenviar el correo.";
+            toast.error(errorMsg);
+        } finally {
+            setIsResendingEmail(false);
+        }
+    };
+
     const toggleQuoteDetails = (quoteId) => {
         setExpandedQuoteId(prevId => (prevId === quoteId ? null : quoteId));
     };
@@ -210,6 +328,21 @@ function AdminQuotesPage() {
         }
     };
 
+    const handleViewInvoicePdf = async (quoteId) => {
+        setProcessingQuoteId(quoteId);
+        try {
+            const response = await quoteAdminService.getInvoicePdf(quoteId);
+            const pdfUrl = URL.createObjectURL(response.data);
+            window.open(pdfUrl, '_blank');
+            URL.revokeObjectURL(pdfUrl);
+        } catch (error) {
+            const errorMsg = error.response?.data?.detail || error.message || `Error al generar la factura del pedido #${quoteId}.`;
+            toast.error(errorMsg);
+        } finally {
+            setProcessingQuoteId(null);
+        }
+    };
+
     return (
         <div className="container mx-auto py-8 px-4">
             <h1 className="text-3xl font-bold text-color-primary mb-6">Gestión de Pedidos</h1>
@@ -287,7 +420,27 @@ function AdminQuotesPage() {
                                                 </div>
                                             }
                                     </td>
-                                    <td className="px-6 py-4 font-bold">{formatCurrency(quote.total)}</td>
+                                    <td className="px-6 py-4">
+                                        <div className="font-bold text-gray-900">{formatCurrency(quote.total)}</div>
+                                        {Number(quote.paid_amount) > 0 ? (
+                                            <div className="mt-1 space-y-0.5">
+                                                <span className="inline-block text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                                    Abono: {formatCurrency(quote.paid_amount)}
+                                                </span>
+                                                {Number(quote.pending_balance) > 0 ? (
+                                                    <div className="text-[11px] font-bold text-red-600">
+                                                        Saldo: {formatCurrency(quote.pending_balance)}
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-[11px] font-semibold text-emerald-600">
+                                                        ✓ Cubierto 100%
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="text-[11px] text-gray-400 mt-1">Sin abono inicial</div>
+                                        )}
+                                    </td>
                                     <td className="px-6 py-4">
                                         <div className={`font-bold ${quote.profit > 0 ? 'text-green-600' : 'text-gray-500'}`}>
                                             {formatCurrency(quote.profit)}
@@ -310,8 +463,38 @@ function AdminQuotesPage() {
                                                     <button onClick={() => handleAction('cancel', quote.id)} disabled={processingQuoteId === quote.id} title="Cancelar Cotización" className="btn-action bg-red-500 hover:bg-red-600"><FaTimes/></button>
                                                 </>
                                             )}
+                                            {/* Botón para editar datos del comprador, abono y observaciones */}
+                                            <button
+                                                onClick={() => handleOpenEditModal(quote)}
+                                                disabled={processingQuoteId === quote.id}
+                                                title="Editar Comprador, Abono y Observaciones"
+                                                className="btn-action bg-amber-500 hover:bg-amber-600 text-white"
+                                            >
+                                                <FaEdit />
+                                            </button>
+
+                                            {/* Botón para reenviar factura / cotización por correo */}
+                                            <button
+                                                onClick={() => handleOpenResendModal(quote)}
+                                                disabled={processingQuoteId === quote.id}
+                                                title="Reenviar Factura / Cotización por Correo"
+                                                className="btn-action bg-purple-600 hover:bg-purple-700 text-white"
+                                            >
+                                                <FaPaperPlane />
+                                            </button>
+
+                                            {/* Botón para ver factura formal PDF A4 */}
+                                            <button
+                                                onClick={() => handleViewInvoicePdf(quote.id)}
+                                                disabled={processingQuoteId === quote.id}
+                                                title="Ver Factura en PDF (A4)"
+                                                className="btn-action bg-indigo-600 hover:bg-indigo-700 text-white"
+                                            >
+                                                <FaFilePdf />
+                                            </button>
+
                                             {['pending', 'paid', 'shipped'].includes(quote.status) && (
-                                                <button onClick={() => handleViewReceipt(quote.id)} disabled={processingQuoteId === quote.id} title="Ver Recibo" className="btn-action bg-gray-500 hover:bg-gray-600"><FaFileInvoiceDollar/></button>
+                                                <button onClick={() => handleViewReceipt(quote.id)} disabled={processingQuoteId === quote.id} title="Ver Recibo Térmico (58mm)" className="btn-action bg-gray-500 hover:bg-gray-600"><FaFileInvoiceDollar/></button>
                                             )}
                                         </div>
                                     </td>
@@ -320,28 +503,87 @@ function AdminQuotesPage() {
                                 {/* Fila de Detalles (Expandible) */}
                                 {expandedQuoteId === quote.id && (
                                     <tr className="bg-gray-50">
-                                        {/* El colspan debe coincidir con el número de columnas de tu tabla */}
-                                        <td colSpan="5" className="p-4">
-                                            <div className="p-2 bg-white rounded shadow-inner">
-                                                <h4 className="font-semibold text-gray-700 mb-2">Items del Pedido:</h4>
-                                                <QuoteItemsList items={quote.items} />
+                                        <td colSpan="6" className="p-4">
+                                            <div className="p-4 bg-white rounded shadow-inner space-y-4">
+                                                <div>
+                                                    <h4 className="font-semibold text-gray-700 mb-2">Items del Pedido:</h4>
+                                                    <QuoteItemsList items={quote.items} />
+                                                </div>
                                                 
+                                                {/* Sección de Abono, Saldo Pendiente y Observaciones */}
+                                                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 pb-2 mb-2">
+                                                        <h4 className="font-semibold text-gray-800 text-sm flex items-center gap-1.5">
+                                                            <FaMoneyBillWave className="text-emerald-600" /> Control de Pago y Abono:
+                                                        </h4>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleOpenEditModal(quote);
+                                                            }}
+                                                            className="text-xs px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded shadow-sm inline-flex items-center gap-1 transition-colors"
+                                                        >
+                                                            <FaEdit size={12} /> Modificar Abono / Notas
+                                                        </button>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                                                        <div className="bg-white p-2.5 rounded border border-gray-100">
+                                                            <span className="text-xs text-gray-500 block">Total Cotización:</span>
+                                                            <span className="font-bold text-gray-900 text-base">{formatCurrency(quote.total)}</span>
+                                                        </div>
+                                                        <div className="bg-white p-2.5 rounded border border-gray-100">
+                                                            <span className="text-xs text-gray-500 block">Abono Registrado:</span>
+                                                            <span className="font-bold text-emerald-600 text-base">{formatCurrency(quote.paid_amount || 0)}</span>
+                                                        </div>
+                                                        <div className="bg-white p-2.5 rounded border border-gray-100">
+                                                            <span className="text-xs text-gray-500 block">Saldo Pendiente:</span>
+                                                            <span className={`font-bold text-base ${Number(quote.pending_balance) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                                                {formatCurrency(quote.pending_balance || 0)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {quote.notes ? (
+                                                        <div className="mt-3 p-2.5 bg-amber-50/70 border border-amber-200 rounded text-xs text-gray-800">
+                                                            <strong className="text-amber-900 block mb-0.5">Observaciones / Notas del Pedido:</strong>
+                                                            <p className="whitespace-pre-line">{quote.notes}</p>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="mt-2 text-xs text-gray-400 italic">Sin observaciones registradas para este pedido.</p>
+                                                    )}
+                                                </div>
+
                                                 {/* Sección para mostrar el cupón aplicado */}
                                                 {quote.coupon && quote.coupon_discount > 0 && (
-                                                    <>
-                                                        <h4 className="font-semibold text-gray-700 mb-2 mt-4">Descuentos:</h4>
+                                                    <div>
+                                                        <h4 className="font-semibold text-gray-700 mb-2">Descuentos:</h4>
                                                         <div className="text-sm text-gray-600 pl-4 border-l-2 border-green-300">
                                                             <p><strong>Cupón Aplicado:</strong> {quote.coupon.code}</p>
                                                             <p><strong>Descuento:</strong> <span className="font-bold text-green-600">-{formatCurrency(quote.coupon_discount)}</span></p>
                                                         </div>
-                                                    </>
+                                                    </div>
                                                 )}
 
-                                                <h4 className="font-semibold text-gray-700 mb-2 mt-4">Datos del Comprador:</h4>
-                                                <div className="text-sm text-gray-600 pl-4 border-l-2 border-gray-200">
-                                                    <p><strong>Dirección:</strong> {quote.user_detail?.address || 'No especificada'}</p>
-                                                    <p><strong>Teléfono:</strong> {quote.user_detail?.phone || 'No especificado'}</p>
-                                                    <p><strong>Documento:</strong> {quote.user_detail?.document || 'No especificado'}</p>
+                                                <div>
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <h4 className="font-semibold text-gray-700">Datos del Comprador:</h4>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleOpenEditModal(quote);
+                                                            }}
+                                                            className="text-xs text-color-secondary hover:underline font-semibold inline-flex items-center gap-1"
+                                                        >
+                                                            <FaUserEdit /> Corregir Datos
+                                                        </button>
+                                                    </div>
+                                                    <div className="text-sm text-gray-600 pl-4 border-l-2 border-gray-200 space-y-1">
+                                                        <p><strong>Nombre:</strong> {quote.customer_name || quote.user_detail?.user || 'Invitado'}</p>
+                                                        <p><strong>Email:</strong> {quote.customer_email || quote.user_email || 'No especificado'}</p>
+                                                        <p><strong>Documento:</strong> {quote.customer_document || quote.user_detail?.document || 'No especificado'}</p>
+                                                        <p><strong>Teléfono:</strong> {quote.customer_phone || quote.user_detail?.phone || 'No especificado'}</p>
+                                                        <p><strong>Dirección:</strong> {quote.customer_address || quote.user_detail?.address || 'No especificada'}</p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>
@@ -408,6 +650,298 @@ function AdminQuotesPage() {
                                 </button>
                             </nav>
                         </div>
+                    </div>
+                </div>
+            )}
+            {/* Modal para Editar Comprador, Abono y Observaciones */}
+            {editingQuote && (
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 relative max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between border-b pb-3 mb-4 sticky top-0 bg-white z-10">
+                            <div className="flex items-center gap-2">
+                                <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+                                    <FaUserEdit size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900">Editar Pedido #{editingQuote.id}</h3>
+                                    <p className="text-xs text-gray-500">Total: {formatCurrency(editingQuote.total)} - Estado: {editingQuote.status}</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleCloseEditModal}
+                                disabled={isSavingEdit}
+                                className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                                title="Cerrar"
+                            >
+                                <FaTimes size={18} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSaveEditQuote} className="space-y-4">
+                            {/* Sección 1: Datos del Comprador */}
+                            <div className="bg-gray-50 p-3.5 rounded-lg border border-gray-200">
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-color-secondary mb-2.5 flex items-center gap-1.5">
+                                    <FaUserEdit /> Datos del Comprador
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Nombre</label>
+                                        <input
+                                            type="text"
+                                            value={editCustomerName}
+                                            onChange={(e) => setEditCustomerName(e.target.value)}
+                                            placeholder="Nombre del cliente"
+                                            className="input-style w-full text-xs"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Correo Electrónico</label>
+                                        <input
+                                            type="email"
+                                            value={editCustomerEmail}
+                                            onChange={(e) => setEditCustomerEmail(e.target.value)}
+                                            placeholder="cliente@ejemplo.com"
+                                            className="input-style w-full text-xs"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Cédula / Documento</label>
+                                        <input
+                                            type="text"
+                                            value={editCustomerDocument}
+                                            onChange={(e) => setEditCustomerDocument(e.target.value)}
+                                            placeholder="1098765432"
+                                            className="input-style w-full text-xs"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Teléfono / Celular</label>
+                                        <input
+                                            type="tel"
+                                            value={editCustomerPhone}
+                                            onChange={(e) => setEditCustomerPhone(e.target.value)}
+                                            placeholder="3001234567"
+                                            className="input-style w-full text-xs"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="mt-3">
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">Dirección de Envío / Domicilio</label>
+                                    <input
+                                        type="text"
+                                        value={editCustomerAddress}
+                                        onChange={(e) => setEditCustomerAddress(e.target.value)}
+                                        placeholder="Ej. Calle 10 # 5-20, Apto 301"
+                                        className="input-style w-full text-xs"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Sección 2: Control de Pago y Abono */}
+                            <div className="bg-gray-50 p-3.5 rounded-lg border border-gray-200">
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-800 mb-2 flex items-center gap-1.5">
+                                    <FaMoneyBillWave /> Control de Pago y Abono
+                                </h4>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                        Abono Registrado ($ COP)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="1000"
+                                        value={editPaidAmount}
+                                        onChange={(e) => setEditPaidAmount(e.target.value)}
+                                        className="input-style w-full font-semibold text-sm"
+                                        required
+                                    />
+
+                                    {/* Botones de ayuda rápida */}
+                                    <div className="flex flex-wrap gap-1 mt-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setEditPaidAmount(String(editingQuote.total || 0))}
+                                            className="text-[11px] px-2 py-0.5 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded font-medium transition-colors"
+                                        >
+                                            100% Total
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setEditPaidAmount(prev => String((parseFloat(prev) || 0) + 50000))}
+                                            className="text-[11px] px-2 py-0.5 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded font-medium transition-colors"
+                                        >
+                                            + $50.000
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setEditPaidAmount(prev => String((parseFloat(prev) || 0) + 100000))}
+                                            className="text-[11px] px-2 py-0.5 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded font-medium transition-colors"
+                                        >
+                                            + $100.000
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setEditPaidAmount('0')}
+                                            className="text-[11px] px-2 py-0.5 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded font-medium transition-colors"
+                                        >
+                                            $0 (Sin Abono)
+                                        </button>
+                                    </div>
+
+                                    {/* Saldo pendiente resultante */}
+                                    <div className="mt-3 p-2 bg-white rounded border border-gray-200 text-xs">
+                                        <div className="flex justify-between text-gray-600 mb-1">
+                                            <span>Total venta:</span>
+                                            <span className="font-semibold">{formatCurrency(editingQuote.total)}</span>
+                                        </div>
+                                        <div className="flex justify-between font-bold">
+                                            <span className="text-red-600">Nuevo Saldo Pendiente:</span>
+                                            <span className="text-red-700 text-sm">
+                                                {formatCurrency(Math.max(0, editingQuote.total - (parseFloat(editPaidAmount) || 0)))}
+                                            </span>
+                                        </div>
+                                        {(parseFloat(editPaidAmount) || 0) >= editingQuote.total && (
+                                            <p className="text-[11px] text-green-700 font-semibold mt-1">✓ Quedará 100% pagado</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Sección 3: Observaciones */}
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 mb-1">
+                                    Observaciones / Notas del Pedido
+                                </label>
+                                <textarea
+                                    rows={3}
+                                    value={editNotes}
+                                    onChange={(e) => setEditNotes(e.target.value)}
+                                    placeholder="Notas sobre el abono, reserva, fecha de recogida..."
+                                    className="input-style w-full text-xs"
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-end gap-3 pt-4 border-t sticky bottom-0 bg-white">
+                                <button
+                                    type="button"
+                                    onClick={handleCloseEditModal}
+                                    disabled={isSavingEdit}
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSavingEdit}
+                                    className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-color-secondary hover:bg-color-accent1 rounded-lg shadow transition-colors disabled:opacity-50"
+                                >
+                                    {isSavingEdit ? (
+                                        <>
+                                            <FaSpinner className="animate-spin" /> Guardando...
+                                        </>
+                                    ) : (
+                                        'Guardar Cambios'
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal para Reenviar Factura / Cotización por Correo */}
+            {resendModalQuote && (
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative">
+                        <div className="flex items-center justify-between border-b pb-3 mb-4">
+                            <div className="flex items-center gap-2">
+                                <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                                    <FaPaperPlane size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900">Reenviar por Correo</h3>
+                                    <p className="text-xs text-gray-500">
+                                        {resendModalQuote.status === 'paid' || resendModalQuote.status === 'shipped' ? 'Factura de Venta' : 'Cotización'} #{resendModalQuote.id}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleCloseResendModal}
+                                disabled={isResendingEmail}
+                                className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                                title="Cerrar"
+                            >
+                                <FaTimes size={18} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleConfirmResendEmail} className="space-y-4">
+                            <div className="p-3 bg-purple-50/50 rounded-lg border border-purple-100 text-xs text-gray-700 space-y-1">
+                                <div className="flex justify-between">
+                                    <span className="font-semibold text-gray-600">Cliente:</span>
+                                    <span>{resendModalQuote.customer_name || resendModalQuote.user_detail?.user || 'Invitado'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="font-semibold text-gray-600">Total:</span>
+                                    <span className="font-bold text-gray-900">{formatCurrency(resendModalQuote.total)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="font-semibold text-gray-600">Documento a enviar:</span>
+                                    <span className="font-medium text-purple-700">
+                                        {resendModalQuote.status === 'paid' || resendModalQuote.status === 'shipped' ? 'Factura de Venta (PDF)' : resendModalQuote.status === 'backorder_paid' ? 'Confirmación Bajo Pedido (PDF)' : 'Cotización Formal (PDF)'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 mb-1">
+                                    Correo Electrónico de Destino <span className="text-red-500">*</span>
+                                </label>
+                                <div className="relative">
+                                    <FaEnvelope className="absolute left-3 top-3 text-gray-400" />
+                                    <input
+                                        type="email"
+                                        required
+                                        value={resendEmailAddress}
+                                        onChange={(e) => setResendEmailAddress(e.target.value)}
+                                        placeholder="cliente@ejemplo.com"
+                                        className="input-style w-full pl-9 text-sm"
+                                        disabled={isResendingEmail}
+                                    />
+                                </div>
+                                <p className="text-[11px] text-gray-500 mt-1">
+                                    Puedes modificar el correo si el cliente desea recibirlo en una dirección diferente.
+                                </p>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-3 pt-4 border-t">
+                                <button
+                                    type="button"
+                                    onClick={handleCloseResendModal}
+                                    disabled={isResendingEmail}
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isResendingEmail}
+                                    className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-lg shadow transition-colors disabled:opacity-50"
+                                >
+                                    {isResendingEmail ? (
+                                        <>
+                                            <FaSpinner className="animate-spin" /> Enviando...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FaPaperPlane /> Reenviar Correo
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

@@ -98,6 +98,18 @@ function Navbar() {
               <>
               {user?.is_staff && (
                 <>
+                   <Link to="/manage/products" 
+                    className={`${desktopLinkClasses} px-3 py-2 rounded-md text-sm font-medium`}
+                    >
+                    Admin Productos
+                    </Link>
+
+                   <Link to="/manage/reports" 
+                    className={`${desktopLinkClasses} px-3 py-2 rounded-md text-sm font-medium`}
+                    >
+                    Reportes
+                    </Link>
+
                    <Link to="/manage/quotes" // <-- RUTA ACTUALIZADA      onClick={closeAllMenus} 
                     className={`${desktopLinkClasses} px-3 py-2 rounded-md text-sm font-medium`}
                     >
@@ -198,6 +210,18 @@ function Navbar() {
               <>
                 {  user?.is_staff && (
                   <>
+                   <Link to="/manage/products"
+                    className={`${commonLinkClasses} ${mobileLinkClasses}`}
+                    onClick={closeAllMenus}
+                    >
+                    Admin Productos
+                    </Link>
+                   <Link to="/manage/reports"
+                    className={`${commonLinkClasses} ${mobileLinkClasses}`}
+                    onClick={closeAllMenus}
+                    >
+                    Reportes
+                    </Link>
                    <Link to="/manage/quotes" // <-- RUTA ACTUALIZADA      onClick={closeAllMenus} 
                     className={`${commonLinkClasses} ${mobileLinkClasses}`}
                     onClick={closeAllMenus}

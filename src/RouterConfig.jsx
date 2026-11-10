@@ -19,6 +19,8 @@ import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
 import AdminQuotesPage from './pages/admin/AdminQuotesPage'; // Página que 
 import POSPage from './pages/admin/POSPage'; // Página que 
 import QuickQuotePage from './pages/admin/QuickQuotePage';
+import AdminProductsPage from './pages/admin/AdminProductsPage';
+import AdminReportsPage from './pages/admin/AdminReportsPage';
 // Componente para Rutas Protegidas
 const ProtectedRoute = () => {
   const { isAuthenticated, isLoading } = useAuthState();
@@ -65,7 +67,9 @@ function RouterConfig() {
       {/* <Route path="/category/:categoryId" element={<ProductListPage />} /> */}
       {/* <Route path="/subcategory/:subcategoryId" element={<ProductListPage />} /> */}
       <Route element={<AdminProtectedRoute />}>
+          <Route path="/manage/products" element={<AdminProductsPage />} />
           <Route path="/manage/quotes" element={<AdminQuotesPage />} />
+          <Route path="/manage/reports" element={<AdminReportsPage />} />
           <Route path="/pos" element={<POSPage />} />
           <Route path="/manage/quick-quote" element={<QuickQuotePage />} />
           {/* Añade más rutas de admin aquí */}

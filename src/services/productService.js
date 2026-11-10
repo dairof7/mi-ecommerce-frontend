@@ -110,6 +110,138 @@ const getNewProducts = async (params = {}) => { // Placeholder
   }
 };
 
+// --- MÉTODOS ADMINISTRATIVOS ---
+
+const createProduct = async (productData) => {
+  try {
+    const response = await apiClient.post('/products/', productData);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating product:", error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al crear producto");
+  }
+};
+
+const updateProduct = async (productId, productData) => {
+  try {
+    const response = await apiClient.patch(`/products/${productId}/`, productData);
+    return response.data;
+  } catch (error) {
+    console.error(`Error updating product ${productId}:`, error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al actualizar producto");
+  }
+};
+
+const deleteProduct = async (productId) => {
+  try {
+    const response = await apiClient.delete(`/products/${productId}/`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error deleting product ${productId}:`, error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al eliminar producto");
+  }
+};
+
+const uploadProductImage = async (productId, file, altText = '') => {
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('product_id', productId);
+    if (altText) {
+      formData.append('alt_text', altText);
+    }
+    const response = await apiClient.post('/products/product-images/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error uploading product image:", error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al subir imagen");
+  }
+};
+
+const deleteProductImage = async (imageId) => {
+  try {
+    const response = await apiClient.delete(`/products/product-images/${imageId}/`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error deleting product image ${imageId}:`, error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al eliminar imagen");
+  }
+};
+
+const getBrands = async (params = {}) => {
+  try {
+    const response = await apiClient.get('/products/brands/', { params });
+    return response.data.results || response.data;
+  } catch (error) {
+    console.error("Error fetching brands:", error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al obtener marcas");
+  }
+};
+
+const createBrand = async (brandData) => {
+  try {
+    const response = await apiClient.post('/products/brands/', brandData);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating brand:", error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al crear marca");
+  }
+};
+
+const getSuppliers = async (params = {}) => {
+  try {
+    const response = await apiClient.get('/products/suppliers/', { params });
+    return response.data.results || response.data;
+  } catch (error) {
+    console.error("Error fetching suppliers:", error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al obtener proveedores");
+  }
+};
+
+const createSupplier = async (supplierData) => {
+  try {
+    const response = await apiClient.post('/products/suppliers/', supplierData);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating supplier:", error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al crear proveedor");
+  }
+};
+
+const createTag = async (tagData) => {
+  try {
+    const response = await apiClient.post('/products/tags/', tagData);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating tag:", error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al crear etiqueta");
+  }
+};
+
+const receiveStock = async (productId, data = {}) => {
+  try {
+    const response = await apiClient.post(`/products/${productId}/receive-stock/`, data);
+    return response.data;
+  } catch (error) {
+    console.error(`Error receiving stock for product ${productId}:`, error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al recibir stock en bodega");
+  }
+};
+
+const receiveMultipleStock = async (items = []) => {
+  try {
+    const response = await apiClient.post('/products/receive-multiple-stock/', { items });
+    return response.data;
+  } catch (error) {
+    console.error("Error receiving multiple stock:", error.response?.data || error.message);
+    throw error.response?.data || new Error("Error al recibir stock múltiple");
+  }
+};
+
 export default {
   getProducts,
   getProductById,
@@ -121,4 +253,16 @@ export default {
   getFeaturedProducts,
   getBestsellerProducts,
   getNewProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  uploadProductImage,
+  deleteProductImage,
+  getBrands,
+  createBrand,
+  getSuppliers,
+  createSupplier,
+  createTag,
+  receiveStock,
+  receiveMultipleStock,
 };

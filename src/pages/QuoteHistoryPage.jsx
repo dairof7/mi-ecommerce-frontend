@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import cartService from '../services/cartService'; // Asume que las funciones de quote están aquí
 import { toast } from 'react-toastify';
-import { FaFileInvoiceDollar, FaInfoCircle, FaTimesCircle, FaCheckCircle, FaRedo } from 'react-icons/fa';
+import { FaFileInvoiceDollar, FaInfoCircle, FaTimesCircle, FaCheckCircle, FaRedo, FaExternalLinkAlt } from 'react-icons/fa';
 import { FaWhatsapp } from 'react-icons/fa';
 import { FaUniversity, FaMobileAlt, FaCreditCard } from 'react-icons/fa';
 const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER;
@@ -27,7 +27,7 @@ const Loader = ({ message = "Cargando cotizaciones..." }) => (
   </div>
 );
 
-// Componente para mostrar los items de una cotización
+// Componente para mostrar los items de una cotización con link al producto
 const QuoteItemsList = ({ items }) => {
   if (!items || items.length === 0) {
     return <p className="text-sm text-gray-500 italic">Esta cotización no tiene items.</p>;
@@ -35,10 +35,25 @@ const QuoteItemsList = ({ items }) => {
   return (
     <ul className="mt-2 space-y-2 pl-4 border-l-2 border-gray-200">
       {items.map(item => (
-        <li key={item.id} className="text-sm text-gray-700">
-          <span className="font-medium">{item.quantity} x {item.product_name}</span>
-          <span className="text-gray-500"> ({formatCurrency(item.price_at_quote)} c/u)</span>
-          <span className="float-right font-semibold">{formatCurrency(item.subtotal)}</span>
+        <li key={item.id} className="text-sm text-gray-700 flex flex-wrap items-center justify-between gap-2 py-0.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-semibold text-gray-800">{item.quantity} x</span>
+            {item.product ? (
+              <Link
+                to={`/products/${item.product}`}
+                onClick={(e) => e.stopPropagation()}
+                className="font-medium text-color-secondary hover:text-color-accent1 hover:underline inline-flex items-center gap-1 transition-colors"
+                title={`Ver "${item.product_name}"`}
+              >
+                <span>{item.product_name}</span>
+                <FaExternalLinkAlt size={10} className="text-gray-400 hover:text-color-accent1 flex-shrink-0" />
+              </Link>
+            ) : (
+              <span className="font-medium text-gray-800">{item.product_name}</span>
+            )}
+            <span className="text-xs text-gray-500">({formatCurrency(item.price_at_quote)} c/u)</span>
+          </div>
+          <span className="font-semibold text-gray-900 ml-auto">{formatCurrency(item.subtotal)}</span>
         </li>
       ))}
     </ul>
@@ -235,6 +250,14 @@ function QuoteHistoryPage() {
                     <p className="text-xl font-bold text-color-primary mt-1">
                         {formatCurrency(quote.total)}
                     </p>
+                    {Number(quote.paid_amount) > 0 && (
+                      <div className="text-xs text-right mt-0.5">
+                        <span className="text-green-700 font-medium">Abono: {formatCurrency(quote.paid_amount)}</span>
+                        {Number(quote.pending_balance) > 0 && (
+                          <span className="text-red-600 font-bold ml-2">Saldo: {formatCurrency(quote.pending_balance)}</span>
+                        )}
+                      </div>
+                    )}
                 </div>
               </div>
             </div>
@@ -244,6 +267,13 @@ function QuoteHistoryPage() {
               <div id={`quote-details-${quote.id}`} className="p-4 sm:p-6 border-t border-gray-200 bg-gray-50">
                 <h3 className="text-md font-semibold text-gray-800 mb-2">Detalles de la Cotización:</h3>
                 <QuoteItemsList items={quote.items} />
+
+                {quote.notes && (
+                  <div className="mt-3 p-3 bg-amber-50 rounded border border-amber-200 text-xs text-gray-800">
+                    <strong className="text-amber-900 block mb-0.5">Observaciones de la Cotización:</strong>
+                    <p className="whitespace-pre-line">{quote.notes}</p>
+                  </div>
+                )}
                 <div className="mt-4 pt-4 border-t border-gray-100 flex justify-end space-x-3">
                     {quote.status === 'pending' && (
                         <button

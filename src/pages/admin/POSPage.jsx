@@ -65,6 +65,10 @@ function POSPage() {
   // Modo Bajo Pedido
   const [isBackorderMode, setIsBackorderMode] = useState(false);
 
+  // Estados para Abono y Observaciones de la venta / cotización
+  const [paidAmount, setPaidAmount] = useState('');
+  const [notes, setNotes] = useState('');
+
   // Estado para manejar los inputs de cantidad de forma diferida
   const [quantityInputs, setQuantityInputs] = useState({});
   const quantityInputRefs = useRef({});
@@ -297,16 +301,21 @@ function POSPage() {
     }
 
     setIsProcessingSale(true);
+    const numericPaid = parseFloat(paidAmount) || 0;
     const payload = {
       customer: { name: customerName, email: customerEmail, document: customerDocument, phone: customerPhone },
       user_id: selectedUser ? selectedUser.id : null,
       is_backorder: isBackorderMode,
+      paid_amount: numericPaid,
+      notes: notes.trim(),
     };
 
     try {
       const quoteData = await cartService.createQuoteFromCart(payload);
       cartDispatch({ type: 'CLEAR_CART_SUCCESS' });
       setIsBackorderMode(false);
+      setPaidAmount('');
+      setNotes('');
       const modeMsg = isBackorderMode ? 'Pedido bajo pedido registrado' : 'Venta registrada';
       toast.success(`${modeMsg} (Cotización #${quoteData.id})`);
       navigate(`/manage/quotes`, { state: { highlightedQuoteId: quoteData.id } });
@@ -501,6 +510,109 @@ function POSPage() {
               )}
               <div className="flex items-center justify-between border-t border-gray-200 pt-4"><dt className="text-base font-medium text-gray-900">Total</dt><dd className="text-base font-bold text-gray-900">{formatCurrency(total)}</dd></div>
             </dl>
+
+            {/* Sección de Abono / Pago Inicial y Observaciones */}
+            <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-3">
+              <div>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="posPaidAmount" className="block text-xs font-bold text-gray-700">
+                    Abono / Pago Inicial (COP)
+                  </label>
+                  <span className="text-[11px] text-gray-500">Para separar o abonar</span>
+                </div>
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">$</span>
+                  </div>
+                  <input
+                    type="number"
+                    id="posPaidAmount"
+                    min="0"
+                    step="1000"
+                    value={paidAmount}
+                    onChange={(e) => setPaidAmount(e.target.value)}
+                    placeholder="0 (o valor abonado)"
+                    className="input-style w-full pl-7 pr-3 text-sm font-medium"
+                  />
+                </div>
+
+                {/* Botones de acceso rápido para el abono */}
+                <div className="flex flex-wrap gap-1 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaidAmount(String(total || 0))}
+                    className="text-[11px] px-2 py-0.5 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded font-medium transition-colors"
+                  >
+                    100% Total
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaidAmount('50000')}
+                    className="text-[11px] px-2 py-0.5 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded font-medium transition-colors"
+                  >
+                    $50.000
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaidAmount('100000')}
+                    className="text-[11px] px-2 py-0.5 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded font-medium transition-colors"
+                  >
+                    $100.000
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaidAmount('0')}
+                    className="text-[11px] px-2 py-0.5 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded font-medium transition-colors"
+                  >
+                    $0 (Sin Abono)
+                  </button>
+                </div>
+
+                {/* Resumen dinámico del saldo pendiente */}
+                {total > 0 && (
+                  <div className="mt-2 pt-2 border-t border-gray-200 text-xs">
+                    {parseFloat(paidAmount) > 0 ? (
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-gray-600">
+                          <span>Abono registrado:</span>
+                          <span className="font-semibold text-green-700">{formatCurrency(parseFloat(paidAmount) || 0)}</span>
+                        </div>
+                        <div className="flex justify-between font-bold">
+                          <span className="text-red-600">Saldo Pendiente:</span>
+                          <span className="text-red-700 text-sm">{formatCurrency(Math.max(0, total - (parseFloat(paidAmount) || 0)))}</span>
+                        </div>
+                        {parseFloat(paidAmount) >= total && (
+                          <p className="text-[11px] text-green-700 font-semibold bg-green-50 p-1 rounded text-center">
+                            ✓ Venta 100% cubierta
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex justify-between text-gray-500">
+                        <span>Saldo total a cobrar:</span>
+                        <span className="font-bold text-gray-700">{formatCurrency(total)}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Observaciones / Notas */}
+              <div className="pt-2 border-t border-gray-200">
+                <label htmlFor="posNotes" className="block text-xs font-bold text-gray-700 mb-1">
+                  Observaciones / Notas del Pedido
+                </label>
+                <textarea
+                  id="posNotes"
+                  rows={2}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Ej: Cliente abona para apartar. Recoge el fin de semana o acordar entrega..."
+                  className="input-style w-full text-xs"
+                />
+              </div>
+            </div>
+
             <div className="mt-6">
                 <button type="submit" disabled={isProcessingSale || itemCount === 0 || isCartLoading} className={`w-full flex items-center justify-center rounded-md border border-transparent px-6 py-3 text-base font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed ${
                   isBackorderMode
