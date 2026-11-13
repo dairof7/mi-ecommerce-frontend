@@ -561,10 +561,11 @@ const AdminProductsPage = () => {
                       title="Seleccionar todos"
                     />
                   </th>
-                  <th className="px-4 py-3 text-center w-16">Foto</th>
+                  <th className="px-3 py-3 text-center w-24">Foto</th>
                   <th className="px-4 py-3">Producto</th>
                   <th className="px-4 py-3 text-right">Precio Venta</th>
                   <th className="px-4 py-3 text-right">Precio Compra</th>
+                  <th className="px-4 py-3 text-right">Ganancia</th>
                   <th className="px-4 py-3 text-center">Stock</th>
                   <th className="px-4 py-3 text-center">Estado</th>
                   <th className="px-4 py-3 text-center">Destacado</th>
@@ -578,6 +579,8 @@ const AdminProductsPage = () => {
                   const finalPrice = product.final_sale_price || product.sale_price;
                   const purchasePrice = parseFloat(product.purchase_price) || 0;
                   const profitMargin = purchasePrice > 0 ? ((finalPrice - purchasePrice) / purchasePrice) * 100 : 0;
+                  const unitProfit = finalPrice - purchasePrice;
+                  const hasPurchasePrice = purchasePrice > 0;
                   const isRowSelected = selectedProductIds.includes(product.id);
 
                   return (
@@ -592,19 +595,25 @@ const AdminProductsPage = () => {
                         />
                       </td>
 
-                      {/* Imagen con hover preview */}
-                      <td className="px-4 py-3 text-center">
+                      {/* Imagen con hover preview ampliado */}
+                      <td className="px-3 py-3 text-center">
                         {firstImage ? (
-                          <div className="relative inline-block group">
+                          <div className="relative inline-block group z-0 hover:z-40">
                             <img
                               src={firstImage}
                               alt={product.name}
-                              className="w-11 h-11 object-cover rounded-lg border border-gray-200 shadow-sm transition-transform duration-200 group-hover:scale-110"
+                              className="w-16 h-16 object-cover rounded-xl border border-gray-200 shadow-sm transition-all duration-200 ease-out group-hover:scale-[2.1] group-hover:shadow-2xl group-hover:ring-2 group-hover:ring-color-secondary group-hover:ring-offset-2 relative bg-white cursor-pointer"
+                              title="Pasa el cursor para agrandar imagen"
                             />
+                            {product.images && product.images.length > 1 && (
+                              <span className="absolute bottom-1 right-1 bg-black/75 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full pointer-events-none group-hover:opacity-0 transition-opacity">
+                                +{product.images.length}
+                              </span>
+                            )}
                           </div>
                         ) : (
-                          <div className="w-11 h-11 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 mx-auto border border-gray-200">
-                            <FaBoxes size={18} />
+                          <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 mx-auto border border-gray-200">
+                            <FaBoxes size={22} />
                           </div>
                         )}
                       </td>
@@ -668,14 +677,35 @@ const AdminProductsPage = () => {
                         )}
                       </td>
 
-                      {/* Precio Compra y Margen */}
+                      {/* Precio Compra */}
                       <td className="px-4 py-3 text-right">
                         <div className="text-xs font-mono text-gray-700">
-                          {purchasePrice > 0 ? formatCurrency(purchasePrice) : '-'}
+                          {hasPurchasePrice ? formatCurrency(purchasePrice) : '-'}
                         </div>
-                        {purchasePrice > 0 && (
-                          <span className={`text-[10px] font-semibold ${profitMargin >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                            {profitMargin.toFixed(0)}% mg
+                      </td>
+
+                      {/* Ganancia por Producto */}
+                      <td className="px-4 py-3 text-right">
+                        {hasPurchasePrice ? (
+                          <div>
+                            <div 
+                              className={`font-bold font-mono text-xs ${unitProfit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}
+                              title={product.stock > 0 ? `Ganancia unitaria: ${formatCurrency(unitProfit)} | Total estimada en stock (${product.stock} un.): ${formatCurrency(unitProfit * product.stock)}` : `Ganancia unitaria: ${formatCurrency(unitProfit)}`}
+                            >
+                              {unitProfit >= 0 ? `+${formatCurrency(unitProfit)}` : formatCurrency(unitProfit)}
+                            </div>
+                            <span 
+                              className={`text-[10px] font-semibold px-1.5 py-0.5 rounded inline-block mt-0.5 ${
+                                profitMargin >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'
+                              }`}
+                              title={`Margen sobre costo: ${profitMargin.toFixed(1)}%`}
+                            >
+                              {profitMargin.toFixed(0)}% mg
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-gray-400 italic" title="No tiene precio de compra registrado">
+                            Sin costo
                           </span>
                         )}
                       </td>
